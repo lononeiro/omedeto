@@ -1,0 +1,21 @@
+# Ignorar o arquivo de variáveis de ambiente
+.env
+
+# Ignorar a pasta node_modules
+node_modules/
+
+# Ignorar os arquivos de log
+log
+*.log
+
+# Ignorar o diretório de build
+dist/
+build/
+
+# Ignorar arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Ignorar arquivos de dependências do npm
+package-lock.json
