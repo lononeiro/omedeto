@@ -139,23 +139,72 @@
             const authToken = localStorage.getItem('rh_auth_token');
             const authExpires = localStorage.getItem('rh_auth_expires');
 
+            console.log('🔍 Verificando autenticação...');
+            console.log('Token encontrado:', authToken ? 'Sim' : 'Não');
+            console.log('Expiração:', authExpires ? new Date(parseInt(authExpires)).toLocaleString() : 'Não definida');
+
             if (!authToken) {
                 console.log('❌ Nenhum token de autenticação encontrado');
                 return false;
             }
 
             // Verificar se o token expirou
-            const now = new Date().getTime();
+            const now = Date.now();
             if (authExpires && now > parseInt(authExpires)) {
-                console.log('❌ Token expirado');
+                console.log('❌ Token expirado em:', new Date(parseInt(authExpires)).toLocaleString());
                 localStorage.removeItem('rh_auth_token');
                 localStorage.removeItem('rh_auth_expires');
                 return false;
             }
 
-            console.log('✅ Usuário autenticado');
+            // Verificar adicionalmente se o token é válido decodificando-o
+            try {
+                // Um token JWT tem 3 partes: header.payload.signature
+                const parts = authToken.split('.');
+                if (parts.length !== 3) {
+                    console.log('❌ Token JWT inválido (não tem 3 partes)');
+                    localStorage.removeItem('rh_auth_token');
+                    localStorage.removeItem('rh_auth_expires');
+                    return false;
+                }
+
+                // Tentar decodificar o payload (segunda parte)
+                const payload = JSON.parse(atob(parts[1]));
+                console.log('✅ Token JWT válido, payload:', payload);
+
+                // Verificar expiração no próprio token (opcional)
+                if (payload.exp && payload.exp * 1000 < Date.now()) {
+                    console.log('❌ Token JWT expirado (no payload)');
+                    localStorage.removeItem('rh_auth_token');
+                    localStorage.removeItem('rh_auth_expires');
+                    return false;
+                }
+
+            } catch (error) {
+                console.log('❌ Token JWT inválido (erro ao decodificar):', error.message);
+                localStorage.removeItem('rh_auth_token');
+                localStorage.removeItem('rh_auth_expires');
+                return false;
+            }
+
+            console.log('✅ Usuário autenticado com sucesso');
             return true;
         }
+
+        // Função para limpar tokens de autenticação antigos
+        function cleanupOldAuth() {
+            // Limpar tokens antigos com nomes diferentes
+            const oldTokenNames = ['token', 'authToken', 'jwtToken', 'userToken'];
+
+            oldTokenNames.forEach(tokenName => {
+                if (localStorage.getItem(tokenName)) {
+                    console.log(`🗑️  Limpando token antigo: ${tokenName}`);
+                    localStorage.removeItem(tokenName);
+                }
+            });
+        }
+        // Primeiro, limpar tokens antigos
+        cleanupOldAuth();
 
         // Redirecionar para login se não autenticado
         if (!checkAuth()) {

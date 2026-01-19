@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
             background-color: #0a1a2d;
             color: white;
@@ -21,7 +22,7 @@
             justify-content: center;
             padding: 20px;
         }
-        
+
         .login-container {
             width: 100%;
             max-width: 400px;
@@ -31,12 +32,12 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(77, 166, 255, 0.3);
         }
-        
+
         .logo {
             text-align: center;
             margin-bottom: 30px;
         }
-        
+
         .logo-text {
             font-size: 2.5rem;
             font-weight: 800;
@@ -46,31 +47,31 @@
             color: transparent;
             margin-bottom: 10px;
         }
-        
+
         .logo-subtitle {
             color: #b0d0ff;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
-        
+
         .login-form h2 {
             text-align: center;
             margin-bottom: 30px;
             color: #e6f0ff;
         }
-        
+
         .form-group {
             margin-bottom: 25px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
             color: #b0d0ff;
             font-weight: 500;
         }
-        
+
         .form-group input {
             width: 100%;
             padding: 14px;
@@ -81,13 +82,13 @@
             font-size: 1rem;
             transition: all 0.3s;
         }
-        
+
         .form-group input:focus {
             outline: none;
             border-color: #4da6ff;
             box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
         }
-        
+
         .btn-login {
             width: 100%;
             padding: 16px;
@@ -101,20 +102,20 @@
             transition: all 0.3s;
             margin-top: 10px;
         }
-        
+
         .btn-login:hover {
             background-color: #0052a3;
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
         }
-        
+
         .btn-login:disabled {
             background-color: #2a4a6e;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-        
+
         .error-message {
             color: #ff6b6b;
             text-align: center;
@@ -125,23 +126,23 @@
             border: 1px solid rgba(255, 107, 107, 0.3);
             display: none;
         }
-        
+
         .back-link {
             text-align: center;
             margin-top: 20px;
         }
-        
+
         .back-link a {
             color: #4da6ff;
             text-decoration: none;
             font-size: 0.9rem;
             transition: color 0.3s;
         }
-        
+
         .back-link a:hover {
             color: #b0d0ff;
         }
-        
+
         .loading {
             display: inline-block;
             width: 20px;
@@ -152,11 +153,13 @@
             animation: spin 1s ease-in-out infinite;
             margin-right: 10px;
         }
-        
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .logout-button {
             background: rgba(255, 107, 107, 0.1);
             color: #ff6b6b;
@@ -167,59 +170,49 @@
             margin-top: 15px;
             font-size: 0.9rem;
         }
-        
+
         .logout-button:hover {
             background: rgba(255, 107, 107, 0.2);
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="logo">
             <div class="logo-text">OMEDETO</div>
             <div class="logo-subtitle">Sistema de Reconhecimento</div>
         </div>
-        
+
         <div class="login-form">
             <h2>Acesso Restrito - RH</h2>
-            
-            <div id="alreadyLoggedIn" style="display: none; text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(77, 166, 255, 0.1); border-radius: 8px;">
+
+            <div id="alreadyLoggedIn"
+                style="display: none; text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(77, 166, 255, 0.1); border-radius: 8px;">
                 <p><i class="fas fa-user-check" style="color: #4da6ff; margin-right: 8px;"></i> Você já está logado!</p>
                 <button onclick="logout()" class="logout-button">Sair e fazer novo login</button>
             </div>
-            
+
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">E-mail</label>
-                    <input 
-                        type="text" 
-                        id="email" 
-                        name="email" 
-                        placeholder="Digite seu e-mail" 
-                        required
-                    >
+                    <input type="text" id="email" name="email" placeholder="Digite seu e-mail" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="password">Senha</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        placeholder="Digite sua senha" 
-                        required
-                    >
+                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
                 </div>
-                
+
                 <button type="submit" class="btn-login" id="loginButton">
                     <span id="buttonText">Entrar</span>
                 </button>
             </form>
-            
+
             <div class="error-message" id="errorMessage">
                 Erro no login. Verifique suas credenciais.
             </div>
-            
+
             <div class="back-link">
                 <a href="index.html">← Voltar para página inicial</a>
             </div>
@@ -229,37 +222,37 @@
     <script>
         // API URL - ajuste conforme necessário
         const API_URL = 'https://omedeto.onrender.com/api/login';
-        
+
         // Função para mostrar mensagens de erro
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
-            
+
             // Esconder mensagem após 5 segundos
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 5000);
         }
-        
+
         // Função para logout
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             location.reload(); // Recarrega a página
         }
-        
+
         // Função para verificar se já está logado (apenas para mostrar mensagem)
         function checkIfLoggedIn() {
             const token = localStorage.getItem('token');
             const alreadyLoggedInDiv = document.getElementById('alreadyLoggedIn');
-            
+
             if (token) {
                 try {
                     // Verificar se o token é válido
                     const tokenData = JSON.parse(atob(token.split('.')[1]));
                     const currentTime = Math.floor(Date.now() / 1000);
-                    
+
                     if (tokenData.exp > currentTime) {
                         // Token válido - mostrar mensagem que já está logado
                         alreadyLoggedInDiv.style.display = 'block';
@@ -274,36 +267,37 @@
                 }
             }
         }
-        
+
+        // Função para inicializar o formulário de login
         // Função para inicializar o formulário de login
         function initLoginForm() {
             const loginForm = document.getElementById('loginForm');
             const loginButton = document.getElementById('loginButton');
             const buttonText = document.getElementById('buttonText');
             const errorMessage = document.getElementById('errorMessage');
-            
+
             if (!loginForm || !loginButton || !buttonText || !errorMessage) {
                 console.error('Elementos do formulário não encontrados!');
                 return;
             }
-            
-            loginForm.addEventListener('submit', async function(e) {
+
+            loginForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                
+
                 // Obter valores do formulário
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value.trim();
-                
+
                 // Validação básica
                 if (!email || !password) {
                     showError('Por favor, preencha todos os campos.');
                     return;
                 }
-                
+
                 // Desabilitar botão e mostrar loading
                 loginButton.disabled = true;
                 buttonText.innerHTML = '<div class="loading"></div>Entrando...';
-                
+
                 try {
                     // Fazer requisição para API
                     const response = await fetch(API_URL, {
@@ -316,7 +310,7 @@
                             password: password
                         })
                     });
-                    
+
                     // Verificar status da resposta
                     if (!response.ok) {
                         // Tentar obter mensagem de erro da resposta
@@ -326,39 +320,46 @@
                         } catch {
                             errorData = null;
                         }
-                        
+
                         if (errorData && errorData.error) {
                             throw new Error(errorData.error);
                         } else {
                             throw new Error(`Erro HTTP: ${response.status}`);
                         }
                     }
-                    
+
                     // Parsear a resposta como JSON
                     const data = await response.json();
-                    
+
                     // Verificar se login foi bem-sucedido (de acordo com seu backend)
                     if (data.success === true) {
                         console.log('Login realizado com sucesso:', data);
-                        
-                        // Salvar token no localStorage
+
+                        // Salvar token no localStorage com o NOME CORRETO que o rh.html espera
                         if (data.token) {
-                            localStorage.setItem('token', data.token);
+                            // Salvar token com o nome correto
+                            localStorage.setItem('rh_auth_token', data.token);
+
+                            // Calcular e salvar tempo de expiração (24 horas do login)
+                            const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 horas em milissegundos
+                            localStorage.setItem('rh_auth_expires', expiresAt.toString());
+
+                            // Salvar dados do usuário também
                             localStorage.setItem('user', JSON.stringify(data.user));
                         }
-                        
+
                         // Redirecionar para rh.html APENAS após login bem-sucedido
                         window.location.href = 'rh.html';
-                        
+
                     } else {
                         // Mostrar mensagem de erro do servidor
                         const errorMsg = data.error || 'Credenciais inválidas';
                         showError(errorMsg);
                     }
-                    
+
                 } catch (error) {
                     console.error('Erro no login:', error);
-                    
+
                     // Verificar tipo específico de erro
                     if (error.message.includes('Failed to fetch')) {
                         showError('Erro de conexão. Verifique sua internet.');
@@ -369,42 +370,42 @@
                     } else {
                         showError('Erro no login: ' + error.message);
                     }
-                    
+
                 } finally {
                     // Reabilitar botão
                     loginButton.disabled = false;
                     buttonText.textContent = 'Entrar';
                 }
             });
-            
+
             // Limpar mensagem de erro ao começar a digitar
-            document.getElementById('email').addEventListener('input', function() {
+            document.getElementById('email').addEventListener('input', function () {
                 errorMessage.style.display = 'none';
             });
-            
-            document.getElementById('password').addEventListener('input', function() {
+
+            document.getElementById('password').addEventListener('input', function () {
                 errorMessage.style.display = 'none';
             });
-            
+
             // Enter para enviar formulário
-            document.getElementById('password').addEventListener('keypress', function(e) {
+            document.getElementById('password').addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     loginForm.dispatchEvent(new Event('submit'));
                 }
             });
         }
-        
+
         // Inicializar quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Verificar se já está logado (apenas para mostrar mensagem)
             checkIfLoggedIn();
-            
+
             // Inicializar formulário de login
             initLoginForm();
-            
+
             console.log('Formulário de login inicializado!');
         });
-        
+
         // Fallback: se o DOM já estiver carregado
         if (document.readyState === 'loading') {
             // Ainda carregando, aguardar evento DOMContentLoaded
@@ -413,7 +414,7 @@
             checkIfLoggedIn();
             initLoginForm();
         }
-        
+
         // Adicionar ícones do Font Awesome
         const faLink = document.createElement('link');
         faLink.rel = 'stylesheet';
@@ -421,4 +422,5 @@
         document.head.appendChild(faLink);
     </script>
 </body>
+
 </html>
