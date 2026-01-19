@@ -1,208 +1,45 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omedeto - Login RH</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #0a1a2d;
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(10, 26, 45, 0.95);
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(77, 166, 255, 0.3);
-        }
-        
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .logo-text {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #4da6ff, #0066cc);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 10px;
-        }
-        
-        .logo-subtitle {
-            color: #b0d0ff;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        .login-form h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #e6f0ff;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #b0d0ff;
-            font-weight: 500;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 14px;
-            background: rgba(0, 20, 40, 0.8);
-            border: 1px solid rgba(77, 166, 255, 0.5);
-            border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #4da6ff;
-            box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
-        }
-        
-        .btn-login {
-            width: 100%;
-            padding: 16px;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-        
-        .btn-login:hover {
-            background-color: #0052a3;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
-        }
-        
-        .btn-login:disabled {
-            background-color: #2a4a6e;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .error-message {
-            color: #ff6b6b;
-            text-align: center;
-            margin-top: 20px;
-            padding: 10px;
-            background: rgba(255, 107, 107, 0.1);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 107, 107, 0.3);
-            display: none;
-        }
-        
-        .back-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .back-link a {
-            color: #4da6ff;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s;
-        }
-        
-        .back-link a:hover {
-            color: #b0d0ff;
-        }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
+    <title>Login - Sistema RH YOROZU</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/login.css">
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <div class="logo-text">OMEDETO</div>
-            <div class="logo-subtitle">Sistema de Reconhecimento</div>
+            <h1><i class="fas fa-users"></i> YOROZU RH</h1>
+            <p>Sistema de Recursos Humanos</p>
         </div>
         
-        <div class="login-form">
-            <h2>Acesso Restrito - RH</h2>
-            
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Usuário</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        placeholder="Digite seu usuário" 
-                        required
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Senha</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        placeholder="Digite sua senha" 
-                        required
-                    >
-                </div>
-                
-                <button type="submit" class="btn-login" id="loginButton">
-                    <span id="buttonText">Entrar</span>
-                </button>
-            </form>
-            
-            <div class="error-message" id="errorMessage">
-                Erro no login. Verifique suas credenciais.
+        <div id="errorMessage" class="error-message"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Usuário</label>
+                <input type="text" id="email" class="form-control" 
+                       placeholder="rh.admin" required value="rh.admin">
             </div>
             
-            <div class="back-link">
-                <a href="index.html">← Voltar para página inicial</a>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" class="form-control" 
+                       placeholder="Digite sua senha" required value="wMb~IVrfnM*%&quot;ç">
             </div>
+            
+            <button type="submit" class="btn-login" id="loginBtn">
+                <span id="btnText">Entrar no Sistema</span>
+                <span id="btnLoading" style="display: none;">
+                    <div class="loader"></div> Entrando...
+                </span>
+            </button>
+        </form>
+        
+        <div class="login-footer">
+            <p>Acesso restrito à equipe de Recursos Humanos</p>
+            <p>YOROZU CORPORATION © 2024</p>
         </div>
     </div>
 
@@ -214,14 +51,14 @@
             e.preventDefault();
             
             // Obter valores do formulário
-            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             const loginButton = document.getElementById('loginButton');
             const buttonText = document.getElementById('buttonText');
             const errorMessage = document.getElementById('errorMessage');
             
             // Validação básica
-            if (!username || !password) {
+            if (!email || !password) {
                 showError('Por favor, preencha todos os campos.');
                 return;
             }
@@ -231,56 +68,55 @@
             buttonText.innerHTML = '<div class="loading"></div>Entrando...';
             
             try {
-                // Fazer requisição para API
+                // Fazer requisição para API (CORRIGIDO: agora envia email em vez de username)
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        username: username,
+                        email: email,  // CORRETO: agora envia email
                         password: password
                     })
                 });
                 
                 // Verificar status da resposta
                 if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-                
-                // Tentar parsear a resposta como JSON
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    throw new Error('Resposta do servidor não é JSON válido');
-                }
-                
-                // Verificar se a resposta contém dados válidos
-                if (!data) {
-                    throw new Error('Resposta do servidor vazia');
-                }
-                
-                // Verificar se login foi bem-sucedido
-                // MODIFICAÇÃO AQUI: Verificar de forma segura
-                if (data.success === true || 
-                    (data.message && typeof data.message === 'string' && 
-                    (data.message.toLowerCase().includes('sucesso') || 
-                     data.message.toLowerCase().includes('login bem-sucedido') ||
-                     data.message.toLowerCase().includes('bem-vindo')))) {
+                    // Tentar obter mensagem de erro da resposta
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch {
+                        errorData = null;
+                    }
                     
-                    // Login bem-sucedido
+                    if (errorData && errorData.error) {
+                        throw new Error(errorData.error);
+                    } else {
+                        throw new Error(`Erro HTTP: ${response.status}`);
+                    }
+                }
+                
+                // Parsear a resposta como JSON
+                const data = await response.json();
+                
+                // Verificar se login foi bem-sucedido (de acordo com seu backend)
+                if (data.success === true) {
                     console.log('Login realizado com sucesso:', data);
+                    
+                    // Salvar token no localStorage
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    }
                     
                     // Redirecionar para dashboard
                     window.location.href = 'dashboard.html';
                     
-                } else if (data.error || data.message) {
-                    // Mostrar mensagem de erro do servidor
-                    const errorMsg = data.error || data.message || 'Credenciais inválidas';
-                    showError(errorMsg);
                 } else {
-                    showError('Credenciais inválidas');
+                    // Mostrar mensagem de erro do servidor
+                    const errorMsg = data.error || 'Credenciais inválidas';
+                    showError(errorMsg);
                 }
                 
             } catch (error) {
@@ -316,7 +152,7 @@
         }
         
         // Limpar mensagem de erro ao começar a digitar
-        document.getElementById('username').addEventListener('input', function() {
+        document.getElementById('email').addEventListener('input', function() {
             document.getElementById('errorMessage').style.display = 'none';
         });
         
@@ -328,6 +164,32 @@
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        // Se já estiver logado, redirecionar para dashboard
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Verificar se o token é válido
+                try {
+                    // Verificar se o token não expirou
+                    const tokenData = JSON.parse(atob(token.split('.')[1]));
+                    const currentTime = Math.floor(Date.now() / 1000);
+                    
+                    if (tokenData.exp > currentTime) {
+                        // Token ainda válido, redirecionar
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        // Token expirado, remover
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                    }
+                } catch {
+                    // Token inválido, remover
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
             }
         });
     </script>
