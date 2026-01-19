@@ -93,7 +93,7 @@
 
     <script>
         // URL da API
-        const API_URL = 'http://localhost:3001/api';
+        const API_URL = 'https://omedeto.onrender.com/api';
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
         // Função para obter o token de autenticação
@@ -190,6 +190,23 @@
             }
         }
 
+        async function deleteMessage(id) {
+            try {
+                const response = await makeAuthenticatedRequest(`/messages/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.success) {
+                    alert(response.message || 'Mensagem excluída com sucesso');
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao excluir mensagem:', error);
+                alert(`Erro ao excluir mensagem: ${error.message}`);
+                return false;
+            }
+        }
+
         async function deleteAllMessages() {
             try {
                 const response = await makeAuthenticatedRequest('/messages', {
@@ -217,13 +234,15 @@
                     total: 0,
                     uniqueSenders: 0,
                     uniqueRecipients: 0
+
                 };
             } catch (error) {
                 console.error('Erro ao buscar estatísticas:', error);
                 return {
                     total: 0,
                     uniqueSenders: 0,
-                    uniqueRecipients: 0
+                    uniqueRecipients: 0,
+                    printed: 0
                 };
             }
         }
@@ -238,12 +257,8 @@
                     <div class="stat-label">Total de Mensagens</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${stats.uniqueSenders}</div>
-                    <div class="stat-label">Remetentes Únicos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${stats.uniqueRecipients}</div>
-                    <div class="stat-label">Destinatários Únicos</div>
+                    <div class="stat-value">${stats.printed}</div>
+                    <div class="stat-label">Mensagens Impressas</div>
                 </div>
             `;
         }
@@ -349,7 +364,7 @@
                 // Adicionar remetente
                 const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, 18);
                 firstPage.drawText(cleanedRemetente, {
-                    x: centerX - (remetenteWidth / 2) -93,
+                    x: centerX - (remetenteWidth / 2) - 93,
                     y: 148,
                     size: 18,
                     font: fontRegular,
@@ -444,7 +459,7 @@
             }
 
             // Remetente
-            page.drawText({remetente}, {
+            page.drawText({ remetente }, {
                 x: 50,
                 y: 100,
                 size: 16,
@@ -585,6 +600,239 @@
                 }
             });
         });
+
+        // rh.html (adicione estas funções e atualize as existentes)
+
+        // ========== FUNÇÕES PARA MARCAÇÃO DE IMPRESSÃO ==========
+        async function markAsPrinted(messageId) {
+            try {
+                const response = await makeAuthenticatedRequest(`/messages/${messageId}/printed`, {
+                    method: 'PUT'
+                });
+
+                if (response.success) {
+                    // Encontrar o card da mensagem
+                    const messageCard = document.querySelector(`.message-card[data-id="${messageId}"]`);
+
+                    if (messageCard) {
+                        // Adicionar classe de animação
+                        messageCard.classList.add('slide-down');
+
+                        // Aguardar animação e mover para baixo
+                        setTimeout(async () => {
+                            // Recarregar mensagens ordenadas
+                            await displayMessagesOrdered();
+                        }, 500);
+                    }
+
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao marcar como impresso:', error);
+                alert(`Erro: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Função para buscar mensagens ordenadas (não impressas primeiro)
+        async function getAllMessagesOrdered() {
+            try {
+                const response = await makeAuthenticatedRequest('/messages/ordered');
+                if (response.success && response.data) {
+                    return response.data;
+                }
+                return [];
+            } catch (error) {
+                console.error('Erro ao buscar mensagens ordenadas:', error);
+                // Fallback para a rota normal
+                return getAllMessages();
+            }
+        }
+
+        // ========== EXIBIR MENSAGENS ORDENADAS ==========
+        async function displayMessagesOrdered() {
+            const messages = await getAllMessagesOrdered();
+            const container = document.getElementById('messagesContainer');
+
+            if (messages.length === 0) {
+                container.innerHTML = `
+            <div class="no-messages">
+                <i class="fas fa-inbox"></i>
+                <h3>Nenhuma mensagem encontrada</h3>
+                <p>Ainda não há mensagens de reconhecimento no sistema.</p>
+            </div>
+        `;
+                return;
+            }
+
+            // Separar mensagens impressas e não impressas
+            const pendingMessages = messages.filter(msg => !msg.isprinted);
+            const printedMessages = messages.filter(msg => msg.isprinted);
+
+            let html = '';
+
+            // Mensagens não impressas (pendentes)
+            if (pendingMessages.length > 0) {
+                pendingMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, false);
+                });
+            }
+
+            // Mensagens impressas
+            if (printedMessages.length > 0) {
+                html += `<h4 class="printed-section-title"><i class="fas fa-print"></i> Já Impressas (${printedMessages.length})</h4>`;
+
+                printedMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, true);
+                });
+            }
+
+            container.innerHTML = html;
+
+            // Adicionar event listeners
+            addMessageEventListeners();
+        }
+
+        // ========== GERAR HTML DO CARD DA MENSAGEM ==========
+        function generateMessageCardHTML(message, isPrinted) {
+            const dataFormatada = message.created_at ?
+                new Date(message.created_at).toLocaleDateString('pt-BR') :
+                new Date().toLocaleDateString('pt-BR');
+
+            const horaFormatada = message.created_at ?
+                new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) :
+                '';
+
+            const mensagemPreview = message.mensagem.length > 200 ?
+                message.mensagem.substring(0, 200) + '...' :
+                message.mensagem;
+
+            // Usar base64 para evitar problemas com caracteres especiais
+            const remetenteBase64 = btoa(unescape(encodeURIComponent(message.remetente_nome)));
+            const destinatarioBase64 = btoa(unescape(encodeURIComponent(message.destinatario_nome)));
+            const mensagemBase64 = btoa(unescape(encodeURIComponent(message.mensagem)));
+
+            // Data de impressão se disponível
+            const printedDate = message.printed_at ?
+                new Date(message.printed_at).toLocaleDateString('pt-BR') :
+                '';
+
+            return `
+        <div class="message-card ${isPrinted ? 'imprinted' : ''}" data-id="${message.id}">
+            <div class="message-header">
+                <div class="message-info">
+                    <div class="message-from-to">
+                        <div class="message-from">
+                            <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
+                        </div>
+                        <div class="message-to">
+                            <strong><i class="fas fa-user-friends"></i> Para:</strong> ${message.destinatario_nome}
+                        </div>
+                    </div>
+                    <div class="message-date">
+                        <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
+                        ${isPrinted && printedDate ?
+                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
+                    `<span class="status-badge pending">PENDENTE</span>`
+                }
+                    </div>
+                </div>
+                <div class="message-status">
+                    ${!isPrinted ?
+                    `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
+                            <i class="fas fa-check-circle"></i> Marcar como Impresso
+                        </button>` :
+                    ''
+                }
+                </div>
+            </div>
+            <div class="message-content">
+                ${mensagemPreview}
+            </div>
+            <div class="message-actions">
+                <button class="btn btn-certificate generate-pdf-btn"
+                        data-remetente="${remetenteBase64}"
+                        data-destinatario="${destinatarioBase64}"
+                        data-mensagem="${mensagemBase64}">
+                    <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
+                </button>
+            </div>
+        </div>
+    `;
+        }
+
+        // ========== ADICIONAR EVENT LISTENERS ==========
+        function addMessageEventListeners() {
+            // Botões de gerar PDF
+            document.querySelectorAll('.generate-pdf-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
+                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
+                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
+                    gerarCertificadoPDF(remetente, destinatario, mensagem);
+                });
+            });
+
+            // Botões de marcar como impresso
+            document.querySelectorAll('.mark-printed-btn').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const messageId = this.getAttribute('data-id');
+                    const confirmed = confirm('Marcar esta mensagem como impressa? Ela será movida para a seção "Já Impressas".');
+
+                    if (confirmed) {
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+
+                        await markAsPrinted(messageId);
+                    }
+                });
+            });
+        }
+
+        // ========== INICIALIZAÇÃO ATUALIZADA ==========
+        document.addEventListener('DOMContentLoaded', function () {
+            // Carregar dados usando a nova função ordenada
+            displayStats();
+            displayMessagesOrdered(); // Mude de displayMessages() para displayMessagesOrdered()
+
+            // Configurar botão de excluir todas
+            document.getElementById('deleteAllMessages').addEventListener('click', async function () {
+                const messages = await getAllMessagesOrdered(); // Usar função ordenada
+                const totalMessages = messages.length;
+
+                if (totalMessages === 0) {
+                    alert('Não há mensagens para excluir.');
+                    return;
+                }
+
+                document.getElementById('confirmDeleteAllText').textContent =
+                    `Tem certeza que deseja excluir todas as ${totalMessages} mensagens? Esta ação não pode ser desfeita.`;
+                document.getElementById('confirmDeleteAllModal').style.display = 'flex';
+            });
+
+            // Restante do código permanece igual...
+            document.getElementById('cancelDeleteAll').addEventListener('click', function () {
+                document.getElementById('confirmDeleteAllModal').style.display = 'none';
+            });
+
+            document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
+                const success = await deleteAllMessages();
+                if (success) {
+                    await displayStats();
+                    await displayMessagesOrdered(); // Atualizar para usar função ordenada
+                }
+                document.getElementById('confirmDeleteAllModal').style.display = 'none';
+            });
+
+            document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+
+
     </script>
 </body>
 

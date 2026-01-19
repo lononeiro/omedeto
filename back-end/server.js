@@ -2,17 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { 
-  testConnection, 
-  messageQueries 
+const {
+  testConnection,
+  messageQueries
 } = require('./database');
 
 const app = express();
 
 // Configuração CORS
-const allowedOrigins = process.env.CORS_ORIGIN 
+const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:5501', 'http://127.0.0.1:5500', 'http://localhost:3001'];
+  : ['http://localhost:5501', 'http://127.0.0.1:5500', 'http://localhost:3001', 'https://omedeto-front-end.onrender.com'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -58,7 +58,7 @@ const authenticateToken = (req, res, next) => {
 app.get('/api/health', async (req, res) => {
   try {
     const dbStatus = await testConnection();
-    
+
     res.json({
       success: true,
       service: 'RH Backend API',
@@ -76,28 +76,28 @@ app.get('/api/health', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Email e senha são obrigatórios' 
+      return res.status(400).json({
+        success: false,
+        error: 'Email e senha são obrigatórios'
       });
     }
 
     // Verificar credenciais do .env
     const adminEmail = process.env.ADMIN_EMAIL || 'rh.admin';
     const adminPassword = process.env.ADMIN_PASSWORD || 'wMb~IVrfnM*%"ç';
-    
+
     if (email !== adminEmail || password !== adminPassword) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Credenciais inválidas' 
+      return res.status(401).json({
+        success: false,
+        error: 'Credenciais inválidas'
       });
     }
 
     // Gerar token JWT
     const token = jwt.sign(
-      { 
+      {
         email: email,
         role: 'admin'
       },
@@ -117,9 +117,9 @@ app.post('/api/login', async (req, res) => {
 
   } catch (error) {
     console.error('Erro no login:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno no servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno no servidor'
     });
   }
 });
@@ -138,21 +138,21 @@ app.get('/api/verify-token', authenticateToken, (req, res) => {
 app.post('/api/messages', authenticateToken, async (req, res) => {
   try {
     const messageData = req.body;
-    
+
     // Validação básica
     if (!messageData.remetente_nome || !messageData.destinatario_nome || !messageData.mensagem) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Campos obrigatórios faltando' 
+      return res.status(400).json({
+        success: false,
+        error: 'Campos obrigatórios faltando'
       });
     }
 
     const result = await messageQueries.saveMessage(messageData);
-    
+
     if (!result.success) {
-      return res.status(500).json({ 
-        success: false, 
-        error: result.error 
+      return res.status(500).json({
+        success: false,
+        error: result.error
       });
     }
 
@@ -164,9 +164,9 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao salvar mensagem:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro ao salvar mensagem' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao salvar mensagem'
     });
   }
 });
@@ -178,11 +178,11 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
 app.get('/api/messages', async (req, res) => {  // REMOVA authenticateToken
   try {
     const result = await messageQueries.getAllMessages();
-    
+
     if (!result.success) {
-      return res.status(500).json({ 
-        success: false, 
-        error: result.error 
+      return res.status(500).json({
+        success: false,
+        error: result.error
       });
     }
 
@@ -194,9 +194,9 @@ app.get('/api/messages', async (req, res) => {  // REMOVA authenticateToken
 
   } catch (error) {
     console.error('Erro ao buscar mensagens:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro ao buscar mensagens' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar mensagens'
     });
   }
 });
@@ -205,11 +205,11 @@ app.get('/api/messages', async (req, res) => {  // REMOVA authenticateToken
 app.get('/api/stats', async (req, res) => {  // REMOVA authenticateToken
   try {
     const result = await messageQueries.getStats();
-    
+
     if (!result.success) {
-      return res.status(500).json({ 
-        success: false, 
-        error: result.error 
+      return res.status(500).json({
+        success: false,
+        error: result.error
       });
     }
 
@@ -220,9 +220,9 @@ app.get('/api/stats', async (req, res) => {  // REMOVA authenticateToken
 
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro ao buscar estatísticas' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar estatísticas'
     });
   }
 });
@@ -231,13 +231,13 @@ app.get('/api/stats', async (req, res) => {  // REMOVA authenticateToken
 app.delete('/api/messages/:id', authenticateToken, async (req, res) => {
   try {
     const messageId = req.params.id;
-    
+
     const result = await messageQueries.deleteMessage(messageId);
-    
+
     if (!result.success) {
-      return res.status(404).json({ 
-        success: false, 
-        error: result.error 
+      return res.status(404).json({
+        success: false,
+        error: result.error
       });
     }
 
@@ -249,9 +249,9 @@ app.delete('/api/messages/:id', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao excluir mensagem:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro ao excluir mensagem' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao excluir mensagem'
     });
   }
 });
@@ -260,11 +260,11 @@ app.delete('/api/messages/:id', authenticateToken, async (req, res) => {
 app.delete('/api/messages', authenticateToken, async (req, res) => {
   try {
     const result = await messageQueries.deleteAllMessages();
-    
+
     if (!result.success) {
-      return res.status(500).json({ 
-        success: false, 
-        error: result.error 
+      return res.status(500).json({
+        success: false,
+        error: result.error
       });
     }
 
@@ -276,9 +276,9 @@ app.delete('/api/messages', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao excluir todas as mensagens:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro ao excluir todas as mensagens' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao excluir todas as mensagens'
     });
   }
 });
@@ -352,21 +352,21 @@ app.get('/', (req, res) => {
 app.post('/api/messages/public', async (req, res) => {
   try {
     const messageData = req.body;
-    
+
     // Validação básica
     if (!messageData.remetente_nome || !messageData.destinatario_nome || !messageData.mensagem) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Campos obrigatórios faltando' 
+      return res.status(400).json({
+        success: false,
+        error: 'Campos obrigatórios faltando'
       });
     }
 
     const result = await messageQueries.saveMessage(messageData);
-    
+
     if (!result.success) {
-      return res.status(500).json({ 
-        success: false, 
-        error: result.error 
+      return res.status(500).json({
+        success: false,
+        error: result.error
       });
     }
 
@@ -378,9 +378,9 @@ app.post('/api/messages/public', async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao salvar mensagem (pública):', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro ao salvar mensagem' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao salvar mensagem'
     });
   }
 });
@@ -392,7 +392,7 @@ async function startServer() {
   try {
     // Testar conexão com o banco
     const dbConnected = await testConnection();
-    
+
     if (!dbConnected) {
       console.error('❌ Não foi possível conectar ao banco de dados');
       console.log('⚠️  O sistema funcionará sem banco de dados (modo fallback)');
@@ -423,5 +423,66 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+
+
+// server.js (adicionar estas rotas)
+
+// Rota para marcar mensagem como impressa
+app.put('/api/messages/:id/printed', authenticateToken, async (req, res) => {
+  try {
+    const messageId = req.params.id;
+
+    const result = await messageQueries.markAsPrinted(messageId);
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Mensagem marcada como impressa',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Erro ao marcar mensagem como impressa:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao marcar mensagem como impressa'
+    });
+  }
+});
+
+// Rota para obter mensagens ordenadas (não impressas primeiro)
+app.get('/api/messages/ordered', authenticateToken, async (req, res) => {
+  try {
+    const result = await messageQueries.getMessagesOrdered();
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      count: result.data.length,
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar mensagens ordenadas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar mensagens ordenadas'
+    });
+  }
+});
+
 
 startServer();

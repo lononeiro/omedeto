@@ -14,10 +14,10 @@ async function testConnection() {
   try {
     const client = await pool.connect();
     console.log('✅ Conectado ao banco de dados Neon PostgreSQL');
-    
+
     // Criar tabela se não existir
     await createTables();
-    
+
     client.release();
     return true;
   } catch (error) {
@@ -34,6 +34,8 @@ async function createTables() {
       remetente_nome VARCHAR(255) NOT NULL,
       destinatario_nome VARCHAR(255) NOT NULL,
       mensagem TEXT NOT NULL,
+      isPrinted BOOLEAN DEFAULT FALSE,
+      printed_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       status VARCHAR(50) DEFAULT 'active'
     );
@@ -57,14 +59,14 @@ const messageQueries = {
         VALUES ($1, $2, $3, $4)
         RETURNING *;
       `;
-      
+
       const values = [
         messageData.remetente_nome,
         messageData.destinatario_nome,
         messageData.mensagem,
         'active'
       ];
-      
+
       const result = await pool.query(query, values);
       return { success: true, data: result.rows[0] };
     } catch (error) {
@@ -81,7 +83,7 @@ const messageQueries = {
         WHERE status = 'active'
         ORDER BY created_at DESC;
       `;
-      
+
       const result = await pool.query(query);
       return { success: true, data: result.rows };
     } catch (error) {
@@ -95,11 +97,11 @@ const messageQueries = {
     try {
       const query = 'SELECT * FROM messages WHERE id = $1 AND status = $2';
       const result = await pool.query(query, [id, 'active']);
-      
+
       if (result.rows.length === 0) {
         return { success: false, error: 'Mensagem não encontrada' };
       }
-      
+
       return { success: true, data: result.rows[0] };
     } catch (error) {
       console.error('Erro ao buscar mensagem:', error.message);
@@ -112,11 +114,11 @@ const messageQueries = {
     try {
       const query = 'UPDATE messages SET status = $1 WHERE id = $2 RETURNING *';
       const result = await pool.query(query, ['deleted', id]);
-      
+
       if (result.rowCount === 0) {
         return { success: false, error: 'Mensagem não encontrada' };
       }
-      
+
       return { success: true, data: result.rows[0] };
     } catch (error) {
       console.error('Erro ao excluir mensagem:', error.message);
@@ -129,14 +131,51 @@ const messageQueries = {
     try {
       const query = 'UPDATE messages SET status = $1 WHERE status = $2 RETURNING *';
       const result = await pool.query(query, ['deleted', 'active']);
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         data: result.rows,
-        count: result.rowCount 
+        count: result.rowCount
       };
     } catch (error) {
       console.error('Erro ao excluir todas as mensagens:', error.message);
+      return { success: false, error: error.message };
+    }
+  },
+  // database.js (adicionar estas funções no objeto messageQueries)
+
+  // Marcar mensagem como impressa
+  markAsPrinted: async (id) => {
+    try {
+      const query = 'UPDATE messages SET isPrinted = $1, printed_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *';
+      const result = await pool.query(query, [true, id]);
+
+      if (result.rowCount === 0) {
+        return { success: false, error: 'Mensagem não encontrada' };
+      }
+
+      return { success: true, data: result.rows[0] };
+    } catch (error) {
+      console.error('Erro ao marcar mensagem como impressa:', error.message);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Obter mensagens organizadas por status (não impressas primeiro)
+  getMessagesOrdered: async () => {
+    try {
+      const query = `
+      SELECT * FROM messages 
+      WHERE status = 'active'
+      ORDER BY 
+        CASE WHEN isPrinted = false THEN 0 ELSE 1 END,
+        created_at DESC;
+    `;
+
+      const result = await pool.query(query);
+      return { success: true, data: result.rows };
+    } catch (error) {
+      console.error('Erro ao buscar mensagens ordenadas:', error.message);
       return { success: false, error: error.message };
     }
   },
@@ -145,13 +184,13 @@ const messageQueries = {
   getStats: async () => {
     try {
       const totalQuery = `SELECT COUNT(*) as total FROM messages WHERE status = 'active'`;
-      const sendersQuery = `SELECT COUNT(DISTINCT remetente_nome) as senders FROM messages WHERE status = 'active'`;
+      const printedMessagesQuery = `SELECT COUNT(*) as printed FROM messages WHERE status = 'active' AND isPrinted = true`;
       const recipientsQuery = `SELECT COUNT(DISTINCT destinatario_nome) as recipients FROM messages WHERE status = 'active'`;
       const recentQuery = `SELECT COUNT(*) as recent FROM messages WHERE status = 'active' AND created_at >= NOW() - INTERVAL '7 days'`;
 
-      const [total, senders, recipients, recent] = await Promise.all([
+      const [total, printed, recipients, recent] = await Promise.all([
         pool.query(totalQuery),
-        pool.query(sendersQuery),
+        pool.query(printedMessagesQuery),
         pool.query(recipientsQuery),
         pool.query(recentQuery)
       ]);
@@ -160,7 +199,7 @@ const messageQueries = {
         success: true,
         data: {
           total: parseInt(total.rows[0].total),
-          uniqueSenders: parseInt(senders.rows[0].senders),
+          printed: parseInt(printed.rows[0].printed),
           uniqueRecipients: parseInt(recipients.rows[0].recipients),
           recent: parseInt(recent.rows[0].recent)
         }
@@ -171,6 +210,9 @@ const messageQueries = {
     }
   }
 };
+
+
+
 
 module.exports = {
   pool,

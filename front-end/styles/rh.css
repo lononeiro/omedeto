@@ -423,3 +423,153 @@
             .messages-header { flex-direction: column; gap: 15px; align-items: stretch; }
             .logout-btn { position: relative; top: 0; right: 0; margin: 10px auto; display: block; }
         }
+
+        /* Estilos para mensagens impressas */
+.message-card {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.message-card.imprinted {
+    opacity: 0.7;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #6c757d;
+    transform: translateY(5px);
+}
+
+.message-card.imprinted::before {
+    content: "✓ IMPRESSO";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #28a745;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.imprinted-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #28a745;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.message-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.message-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-badge.printed {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Botão de marcar como impresso */
+.btn-mark-printed {
+    background: linear-gradient(135deg, #0d2b5c 0%, #1a4b8c 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-mark-printed:hover {
+    background: linear-gradient(135deg, #1a4b8c 0%, #0d2b5c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 43, 92, 0.2);
+}
+
+.btn-mark-printed:active {
+    transform: translateY(0);
+}
+
+.btn-mark-printed:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Animação de movimento */
+@keyframes slideDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(10px);
+    }
+}
+
+.slide-down {
+    animation: slideDown 0.5s ease forwards;
+}
+
+/* Organização visual das mensagens */
+.messages-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.messages-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #0d2b5c;
+}
+
+.printed-section-title {
+    color: #6c757d;
+    font-size: 18px;
+    margin-top: 30px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #dee2e6;
+}
