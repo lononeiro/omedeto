@@ -65,18 +65,7 @@
             </div>
         </div>
 
-        <!-- Modal de confirmação -->
-        <div id="confirmDeleteAllModal" class="modal">
-            <div class="modal-content">
-                <h2 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirmar
-                    Exclusão</h2>
-                <p id="confirmDeleteAllText" style="margin-bottom: 25px;"></p>
-                <div class="modal-actions">
-                    <button id="cancelDeleteAll" class="btn">Cancelar</button>
-                    <button id="confirmDeleteAll" class="btn btn-danger">Excluir Todas</button>
-                </div>
-            </div>
-        </div>
+        <!-- Modal de confirmação para exclusão em lote -->
         <div id="confirmDeleteAllModal" class="modal">
             <div class="modal-content">
                 <h2 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirmar
@@ -92,237 +81,240 @@
         <!-- Modal de confirmação para exclusão individual -->
         <div id="confirmDeleteModal" class="modal">
             <div class="modal-content">
-                <h2 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirmar
-                    Exclusão</h2>
+                <h2 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirmar Exclusão</h2>
                 <p id="confirmDeleteText" style="margin-bottom: 25px;"></p>
                 <div class="modal-actions">
                     <button id="cancelDelete" class="btn">Cancelar</button>
                     <button id="confirmDelete" class="btn btn-danger">Excluir</button>
                 </div>
             </div>
-            <!-- Loader -->
-            <div id="pdfLoader" class="loader">
-                <div class="loader-spinner"></div>
-                <p>Gerando certificado em PDF...</p>
-            </div>
-
-            <footer>
-                <p>YOROZU CORPORATION - Sistema de Reconhecimento entre Colaboradores</p>
-                <p class="yorozu-footer">株式会社 三〇六 - 従業員評価システム</p>
-                <p>Protótipo para demonstração interna. Dados armazenados no banco de dados Neon.</p>
-            </footer>
         </div>
 
-        <script>
-            // URL da API
-            const API_URL = 'https://omedeto.onrender.com/api';
+        <!-- Loader -->
+        <div id="pdfLoader" class="loader">
+            <div class="loader-spinner"></div>
+            <p>Gerando certificado em PDF...</p>
+        </div>
 
-            // ========== SISTEMA DE AUTENTICAÇÃO ==========
-            // Função para obter o token de autenticação
-            function getAuthToken() {
-                return localStorage.getItem('rh_auth_token');
+        <footer>
+            <p>YOROZU CORPORATION - Sistema de Reconhecimento entre Colaboradores</p>
+            <p class="yorozu-footer">株式会社 三〇六 - 従業員評価システム</p>
+            <p>Protótipo para demonstração interna. Dados armazenados no banco de dados Neon.</p>
+        </footer>
+    </div>
+
+    <script>
+        // URL da API
+        const API_URL = 'https://omedeto.onrender.com/api';
+
+        // Variáveis para controle da exclusão individual
+        let currentMessageIdToDelete = null;
+
+        // ========== SISTEMA DE AUTENTICAÇÃO ==========
+        // Função para obter o token de autenticação
+        function getAuthToken() {
+            return localStorage.getItem('rh_auth_token');
+        }
+
+        // Função para fazer requisições autenticadas
+        async function makeAuthenticatedRequest(endpoint, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('Não autenticado');
             }
 
-            // Função para fazer requisições autenticadas
-            async function makeAuthenticatedRequest(endpoint, options = {}) {
-                const token = getAuthToken();
-                if (!token) {
-                    throw new Error('Não autenticado');
+            const defaultOptions = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
+            };
 
-                const defaultOptions = {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                };
+            const mergedOptions = { ...defaultOptions, ...options };
+            const response = await fetch(`${API_URL}${endpoint}`, mergedOptions);
 
-                const mergedOptions = { ...defaultOptions, ...options };
-                const response = await fetch(`${API_URL}${endpoint}`, mergedOptions);
-
-                if (response.status === 401) {
-                    // Token inválido ou expirado
-                    localStorage.removeItem('rh_auth_token');
-                    localStorage.removeItem('rh_auth_expires');
-                    window.location.href = 'login.html';
-                    throw new Error('Sessão expirada');
-                }
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Erro na requisição');
-                }
-
-                return response.json();
-            }
-
-            // Verificar autenticação
-            function checkAuth() {
-                const authToken = localStorage.getItem('rh_auth_token');
-                const authExpires = localStorage.getItem('rh_auth_expires');
-
-                console.log('🔍 Verificando autenticação...');
-                console.log('Token encontrado:', authToken ? 'Sim' : 'Não');
-                console.log('Expiração:', authExpires ? new Date(parseInt(authExpires)).toLocaleString() : 'Não definida');
-
-                if (!authToken) {
-                    console.log('❌ Nenhum token de autenticação encontrado');
-                    return false;
-                }
-
-                // Verificar se o token expirou
-                const now = Date.now();
-                if (authExpires && now > parseInt(authExpires)) {
-                    console.log('❌ Token expirado em:', new Date(parseInt(authExpires)).toLocaleString());
-                    localStorage.removeItem('rh_auth_token');
-                    localStorage.removeItem('rh_auth_expires');
-                    return false;
-                }
-
-                // Verificar adicionalmente se o token é válido decodificando-o
-                try {
-                    // Um token JWT tem 3 partes: header.payload.signature
-                    const parts = authToken.split('.');
-                    if (parts.length !== 3) {
-                        console.log('❌ Token JWT inválido (não tem 3 partes)');
-                        localStorage.removeItem('rh_auth_token');
-                        localStorage.removeItem('rh_auth_expires');
-                        return false;
-                    }
-
-                    // Tentar decodificar o payload (segunda parte)
-                    const payload = JSON.parse(atob(parts[1]));
-                    console.log('✅ Token JWT válido, payload:', payload);
-
-                    // Verificar expiração no próprio token (opcional)
-                    if (payload.exp && payload.exp * 1000 < Date.now()) {
-                        console.log('❌ Token JWT expirado (no payload)');
-                        localStorage.removeItem('rh_auth_token');
-                        localStorage.removeItem('rh_auth_expires');
-                        return false;
-                    }
-
-                } catch (error) {
-                    console.log('❌ Token JWT inválido (erro ao decodificar):', error.message);
-                    localStorage.removeItem('rh_auth_token');
-                    localStorage.removeItem('rh_auth_expires');
-                    return false;
-                }
-
-                console.log('✅ Usuário autenticado com sucesso');
-                return true;
-            }
-
-            // Função para limpar tokens de autenticação antigos
-            function cleanupOldAuth() {
-                // Limpar tokens antigos com nomes diferentes
-                const oldTokenNames = ['token', 'authToken', 'jwtToken', 'userToken'];
-
-                oldTokenNames.forEach(tokenName => {
-                    if (localStorage.getItem(tokenName)) {
-                        console.log(`🗑️  Limpando token antigo: ${tokenName}`);
-                        localStorage.removeItem(tokenName);
-                    }
-                });
-            }
-            // Primeiro, limpar tokens antigos
-            cleanupOldAuth();
-
-            // Redirecionar para login se não autenticado
-            if (!checkAuth()) {
-                alert('Acesso negado. Por favor, faça login.');
+            if (response.status === 401) {
+                // Token inválido ou expirado
+                localStorage.removeItem('rh_auth_token');
+                localStorage.removeItem('rh_auth_expires');
                 window.location.href = 'login.html';
-            } else {
-                // Mostrar botão de logout
-                document.getElementById('logoutBtn').style.display = 'flex';
+                throw new Error('Sessão expirada');
             }
 
-            // Logout
-            document.getElementById('logoutBtn').addEventListener('click', function () {
-                if (confirm('Deseja realmente sair do sistema?')) {
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Erro na requisição');
+            }
+
+            return response.json();
+        }
+
+        // Verificar autenticação
+        function checkAuth() {
+            const authToken = localStorage.getItem('rh_auth_token');
+            const authExpires = localStorage.getItem('rh_auth_expires');
+
+            console.log('🔍 Verificando autenticação...');
+            console.log('Token encontrado:', authToken ? 'Sim' : 'Não');
+            console.log('Expiração:', authExpires ? new Date(parseInt(authExpires)).toLocaleString() : 'Não definida');
+
+            if (!authToken) {
+                console.log('❌ Nenhum token de autenticação encontrado');
+                return false;
+            }
+
+            // Verificar se o token expirou
+            const now = Date.now();
+            if (authExpires && now > parseInt(authExpires)) {
+                console.log('❌ Token expirado em:', new Date(parseInt(authExpires)).toLocaleString());
+                localStorage.removeItem('rh_auth_token');
+                localStorage.removeItem('rh_auth_expires');
+                return false;
+            }
+
+            // Verificar adicionalmente se o token é válido decodificando-o
+            try {
+                // Um token JWT tem 3 partes: header.payload.signature
+                const parts = authToken.split('.');
+                if (parts.length !== 3) {
+                    console.log('❌ Token JWT inválido (não tem 3 partes)');
                     localStorage.removeItem('rh_auth_token');
                     localStorage.removeItem('rh_auth_expires');
-                    window.location.href = 'login.html';
+                    return false;
+                }
+
+                // Tentar decodificar o payload (segunda parte)
+                const payload = JSON.parse(atob(parts[1]));
+                console.log('✅ Token JWT válido, payload:', payload);
+
+                // Verificar expiração no próprio token (opcional)
+                if (payload.exp && payload.exp * 1000 < Date.now()) {
+                    console.log('❌ Token JWT expirado (no payload)');
+                    localStorage.removeItem('rh_auth_token');
+                    localStorage.removeItem('rh_auth_expires');
+                    return false;
+                }
+
+            } catch (error) {
+                console.log('❌ Token JWT inválido (erro ao decodificar):', error.message);
+                localStorage.removeItem('rh_auth_token');
+                localStorage.removeItem('rh_auth_expires');
+                return false;
+            }
+
+            console.log('✅ Usuário autenticado com sucesso');
+            return true;
+        }
+
+        // Função para limpar tokens de autenticação antigos
+        function cleanupOldAuth() {
+            // Limpar tokens antigos com nomes diferentes
+            const oldTokenNames = ['token', 'authToken', 'jwtToken', 'userToken'];
+
+            oldTokenNames.forEach(tokenName => {
+                if (localStorage.getItem(tokenName)) {
+                    console.log(`🗑️  Limpando token antigo: ${tokenName}`);
+                    localStorage.removeItem(tokenName);
                 }
             });
+        }
+        // Primeiro, limpar tokens antigos
+        cleanupOldAuth();
 
-            // ========== FUNÇÕES DO SISTEMA DE MENSAGENS (API) ==========
-            async function getAllMessages() {
-                try {
-                    const response = await makeAuthenticatedRequest('/messages');
-                    if (response.success && response.data) {
-                        return response.data;
-                    }
-                    return [];
-                } catch (error) {
-                    console.error('Erro ao buscar mensagens:', error);
-                    alert(`Erro ao buscar mensagens: ${error.message}`);
-                    return [];
-                }
+        // Redirecionar para login se não autenticado
+        if (!checkAuth()) {
+            alert('Acesso negado. Por favor, faça login.');
+            window.location.href = 'login.html';
+        } else {
+            // Mostrar botão de logout
+            document.getElementById('logoutBtn').style.display = 'flex';
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function () {
+            if (confirm('Deseja realmente sair do sistema?')) {
+                localStorage.removeItem('rh_auth_token');
+                localStorage.removeItem('rh_auth_expires');
+                window.location.href = 'login.html';
             }
+        });
 
-            async function deleteMessage(id) {
-                try {
-                    const response = await makeAuthenticatedRequest(`/messages/${id}`, {
-                        method: 'DELETE'
-                    });
-                    if (response.success) {
-                        alert(response.message || 'Mensagem excluída com sucesso');
-                        return true;
-                    }
-                    return false;
-                } catch (error) {
-                    console.error('Erro ao excluir mensagem:', error);
-                    alert(`Erro ao excluir mensagem: ${error.message}`);
-                    return false;
+        // ========== FUNÇÕES DO SISTEMA DE MENSAGENS (API) ==========
+        async function getAllMessages() {
+            try {
+                const response = await makeAuthenticatedRequest('/messages');
+                if (response.success && response.data) {
+                    return response.data;
                 }
+                return [];
+            } catch (error) {
+                console.error('Erro ao buscar mensagens:', error);
+                alert(`Erro ao buscar mensagens: ${error.message}`);
+                return [];
             }
+        }
 
-            async function deleteAllMessages() {
-                try {
-                    const response = await makeAuthenticatedRequest('/messages', {
-                        method: 'DELETE'
-                    });
-                    if (response.success) {
-                        alert(response.message || 'Todas as mensagens foram excluídas com sucesso');
-                        return true;
-                    }
-                    return false;
-                } catch (error) {
-                    console.error('Erro ao excluir mensagens:', error);
-                    alert(`Erro ao excluir mensagens: ${error.message}`);
-                    return false;
+        async function deleteMessage(id) {
+            try {
+                const response = await makeAuthenticatedRequest(`/messages/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.success) {
+                    alert(response.message || 'Mensagem excluída com sucesso');
+                    return true;
                 }
+                return false;
+            } catch (error) {
+                console.error('Erro ao excluir mensagem:', error);
+                alert(`Erro ao excluir mensagem: ${error.message}`);
+                return false;
             }
+        }
 
-            async function getStats() {
-                try {
-                    const response = await makeAuthenticatedRequest('/stats');
-                    if (response.success && response.data) {
-                        return response.data;
-                    }
-                    return {
-                        total: 0,
-                        uniqueSenders: 0,
-                        uniqueRecipients: 0
-
-                    };
-                } catch (error) {
-                    console.error('Erro ao buscar estatísticas:', error);
-                    return {
-                        total: 0,
-                        uniqueSenders: 0,
-                        uniqueRecipients: 0,
-                        printed: 0
-                    };
+        async function deleteAllMessages() {
+            try {
+                const response = await makeAuthenticatedRequest('/messages', {
+                    method: 'DELETE'
+                });
+                if (response.success) {
+                    alert(response.message || 'Todas as mensagens foram excluídas com sucesso');
+                    return true;
                 }
+                return false;
+            } catch (error) {
+                console.error('Erro ao excluir mensagens:', error);
+                alert(`Erro ao excluir mensagens: ${error.message}`);
+                return false;
             }
+        }
 
-            async function displayStats() {
-                const stats = await getStats();
-                const statsContainer = document.getElementById('statsContainer');
+        async function getStats() {
+            try {
+                const response = await makeAuthenticatedRequest('/stats');
+                if (response.success && response.data) {
+                    return response.data;
+                }
+                return {
+                    total: 0,
+                    uniqueSenders: 0,
+                    uniqueRecipients: 0
+                };
+            } catch (error) {
+                console.error('Erro ao buscar estatísticas:', error);
+                return {
+                    total: 0,
+                    uniqueSenders: 0,
+                    uniqueRecipients: 0,
+                    printed: 0
+                };
+            }
+        }
 
-                statsContainer.innerHTML = `
+        async function displayStats() {
+            const stats = await getStats();
+            const statsContainer = document.getElementById('statsContainer');
+
+            statsContainer.innerHTML = `
                 <div class="stat-card">
                     <div class="stat-value">${stats.total}</div>
                     <div class="stat-label">Total de Mensagens</div>
@@ -332,264 +324,340 @@
                     <div class="stat-label">Mensagens Impressas</div>
                 </div>
             `;
-            }
+        }
 
-            // ========== FUNÇÃO PARA LIMPAR TEXTO PARA PDF ==========
-            function cleanTextForPDF(text) {
-                if (!text) return '';
+        // ========== FUNÇÃO PARA LIMPAR TEXTO PARA PDF ==========
+        function cleanTextForPDF(text) {
+            if (!text) return '';
 
-                // Remover caracteres problemáticos para WinAnsi
-                const cleaned = text
-                    .replace(/\r?\n|\r/g, ' ')  // Substituir quebras de linha por espaço
-                    .replace(/[^\x00-\x7F]/g, '') // Remover caracteres não-ASCII
-                    .replace(/[^\x20-\x7E]/g, '') // Remover outros caracteres não imprimíveis
-                    .trim();
+            // Remover caracteres problemáticos para WinAnsi
+            const cleaned = text
+                .replace(/\r?\n|\r/g, ' ')  // Substituir quebras de linha por espaço
+                .replace(/[^\x00-\x7F]/g, '') // Remover caracteres não-ASCII
+                .replace(/[^\x20-\x7E]/g, '') // Remover outros caracteres não imprimíveis
+                .trim();
 
-                return cleaned;
-            }
+            return cleaned;
+        }
 
-            // ========== FUNÇÃO PARA FORMATAR MENSAGEM EM LINHAS ==========
-            function formatMessageLines(message, maxCharsPerLine = 50, maxLines = 8) {
-                const words = message.split(' ');
-                const lines = [];
-                let currentLine = '';
+        // ========== FUNÇÃO PARA FORMATAR MENSAGEM EM LINHAS ==========
+        function formatMessageLines(message, maxCharsPerLine = 50, maxLines = 8) {
+            const words = message.split(' ');
+            const lines = [];
+            let currentLine = '';
 
-                for (const word of words) {
-                    // Se adicionar esta palavra exceder o limite da linha
-                    if ((currentLine + ' ' + word).length > maxCharsPerLine) {
-                        // Se já atingiu o máximo de linhas, para aqui
-                        if (lines.length >= maxLines - 1) {
-                            // Adiciona "..." no final da última linha se truncou
-                            currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
-                            lines.push(currentLine);
-                            return lines;
-                        }
+            for (const word of words) {
+                // Se adicionar esta palavra exceder o limite da linha
+                if ((currentLine + ' ' + word).length > maxCharsPerLine) {
+                    // Se já atingiu o máximo de linhas, para aqui
+                    if (lines.length >= maxLines - 1) {
+                        // Adiciona "..." no final da última linha se truncou
+                        currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
                         lines.push(currentLine);
-                        currentLine = word;
-                    } else {
-                        currentLine = currentLine ? currentLine + ' ' + word : word;
+                        return lines;
                     }
-                }
-
-                // Adiciona a última linha se houver conteúdo
-                if (currentLine) {
                     lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = currentLine ? currentLine + ' ' + word : word;
                 }
-
-                // Limita ao número máximo de linhas
-                return lines.slice(0, maxLines);
             }
 
-            // ========== FUNÇÃO ATUALIZADA PARA GERAR CERTIFICADO PDF ==========
-            async function gerarCertificadoPDF(remetente, destinatario, mensagem) {
-                const loader = document.getElementById('pdfLoader');
+            // Adiciona a última linha se houver conteúdo
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+
+            // Limita ao número máximo de linhas
+            return lines.slice(0, maxLines);
+        }
+
+        // ========== FUNÇÃO ATUALIZADA PARA GERAR CERTIFICADO PDF ==========
+        async function gerarCertificadoPDF(remetente, destinatario, mensagem) {
+            const loader = document.getElementById('pdfLoader');
+            try {
+                loader.style.display = 'flex';
+
+                // Limpar os textos
+                const cleanedRemetente = cleanTextForPDF(remetente);
+                const cleanedDestinatario = cleanTextForPDF(destinatario);
+                const cleanedMensagem = cleanTextForPDF(mensagem);
+
+                // Validar comprimento máximo
+                if (cleanedMensagem.length > 400) {
+                    alert('A mensagem é muito longa para o certificado. Por favor, limite a 400 caracteres.');
+                    loader.style.display = 'none';
+                    return;
+                }
+
+                // Tentar carregar o template PDF
+                let pdfBytes;
                 try {
-                    loader.style.display = 'flex';
+                    const response = await fetch('Certificado.pdf');
+                    if (!response.ok) throw new Error('PDF não encontrado');
+                    pdfBytes = await response.arrayBuffer();
+                } catch {
+                    // Se não encontrar, criar PDF alternativo
+                    return criarPDFAlternativo(cleanedRemetente, cleanedDestinatario, cleanedMensagem);
+                }
 
-                    // Limpar os textos
-                    const cleanedRemetente = cleanTextForPDF(remetente);
-                    const cleanedDestinatario = cleanTextForPDF(destinatario);
-                    const cleanedMensagem = cleanTextForPDF(mensagem);
+                // Carregar e modificar o PDF
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+                const { width, height } = firstPage.getSize();
 
-                    // Validar comprimento máximo
-                    if (cleanedMensagem.length > 400) {
-                        alert('A mensagem é muito longa para o certificado. Por favor, limite a 400 caracteres.');
-                        loader.style.display = 'none';
-                        return;
-                    }
+                // Configurar fontes
+                const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                const fontRegular = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-                    // Tentar carregar o template PDF
-                    let pdfBytes;
-                    try {
-                        const response = await fetch('Certificado.pdf');
-                        if (!response.ok) throw new Error('PDF não encontrado');
-                        pdfBytes = await response.arrayBuffer();
-                    } catch {
-                        // Se não encontrar, criar PDF alternativo
-                        return criarPDFAlternativo(cleanedRemetente, cleanedDestinatario, cleanedMensagem);
-                    }
+                // Calcular posições (ajuste conforme necessário)
+                const centerX = width / 2;
 
-                    // Carregar e modificar o PDF
-                    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-                    const pages = pdfDoc.getPages();
-                    const firstPage = pages[0];
-                    const { width, height } = firstPage.getSize();
+                // Adicionar remetente
+                const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, 18);
+                firstPage.drawText(cleanedRemetente, {
+                    x: centerX - (remetenteWidth / 2) - 93,
+                    y: 160,
+                    size: 18,
+                    font: fontRegular,
+                    color: PDFLib.rgb(0, 0, 0),
+                });
 
-                    // Configurar fontes
-                    const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                    const fontRegular = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                // Adicionar mensagem formatada
+                const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
+                let yPos = height - 200;
 
-                    // Calcular posições (ajuste conforme necessário)
-                    const centerX = width / 2;
-
-                    // // Adicionar destinatário (centralizado)
-                    // const destinatarioWidth = fontBold.widthOfTextAtSize(cleanedDestinatario, 28);
-                    // firstPage.drawText(cleanedDestinatario, {
-                    //     x: centerX - (destinatarioWidth / 2),
-                    //     y: height - 200,
-                    //     size: 28,
-                    //     font: fontBold,
-                    //     color: PDFLib.rgb(0, 0, 0),
-                    // });
-
-                    // Adicionar remetente
-                    const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, 18);
-                    firstPage.drawText(cleanedRemetente, {
-                        x: centerX - (remetenteWidth / 2) - 93,
-                        y: 160,
-                        size: 18,
+                for (let i = 0; i < messageLines.length; i++) {
+                    const line = messageLines[i];
+                    const lineWidth = fontRegular.widthOfTextAtSize(line, 16);
+                    firstPage.drawText(line, {
+                        x: centerX - (lineWidth / 2),
+                        y: yPos,
+                        size: 16,
                         font: fontRegular,
                         color: PDFLib.rgb(0, 0, 0),
-                    });
-
-                    // Adicionar mensagem formatada
-                    const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
-                    let yPos = height - 200;
-
-                    for (let i = 0; i < messageLines.length; i++) {
-                        const line = messageLines[i];
-                        const lineWidth = fontRegular.widthOfTextAtSize(line, 16);
-                        firstPage.drawText(line, {
-                            x: centerX - (lineWidth / 2),
-                            y: yPos,
-                            size: 16,
-                            font: fontRegular,
-                            color: PDFLib.rgb(0, 0, 0),
-                        });
-                        yPos -= 25;
-                    }
-
-                    // Salvar PDF
-                    const modifiedPdfBytes = await pdfDoc.save();
-
-                    // Criar download
-                    const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `Certificado_YOROZU_${cleanedDestinatario.replace(/\s+/g, '_')}.pdf`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                } catch (error) {
-                    console.error('Erro ao gerar PDF:', error);
-                    alert('Erro ao gerar certificado. Por favor, use uma mensagem mais curta e sem caracteres especiais.');
-                } finally {
-                    loader.style.display = 'none';
-                }
-            }
-
-            // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO ==========
-            async function criarPDFAlternativo(remetente, destinatario, mensagem) {
-                const pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([600, 400]);
-                const { width, height } = page.getSize();
-
-                // Configurações
-                const font = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-                const color = PDFLib.rgb(0.05, 0.17, 0.36);
-
-                // Título
-                page.drawText('CERTIFICADO DE RECONHECIMENTO', {
-                    x: 50,
-                    y: height - 60,
-                    size: 24,
-                    font: font,
-                    color: color,
-                });
-
-                // Logo YOROZU
-                page.drawText('YOROZU CORPORATION', {
-                    x: 50,
-                    y: height - 100,
-                    size: 18,
-                    font: font,
-                    color: color,
-                });
-
-                // Destinatário
-                page.drawText(`Para: ${destinatario}`, {
-                    x: 50,
-                    y: height - 160,
-                    size: 22,
-                    font: font,
-                });
-
-                // Mensagem formatada
-                const messageLines = formatMessageLines(mensagem, 60, 6);
-                let yPos = height - 180;
-                for (let i = 0; i < messageLines.length; i++) {
-                    page.drawText(messageLines[i], {
-                        x: 50,
-                        y: yPos,
-                        size: 14,
-                        font: regularFont,
                     });
                     yPos -= 25;
                 }
 
-                // Remetente
-                page.drawText({ remetente }, {
-                    x: 50,
-                    y: 100,
-                    size: 16,
-                    font: font,
-                });
-
-                // Data
-                const data = new Date().toLocaleDateString('pt-BR');
-                page.drawText(`Data: ${data}`, {
-                    x: 50,
-                    y: 70,
-                    size: 14,
-                    font: regularFont,
-                });
-
                 // Salvar PDF
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const modifiedPdfBytes = await pdfDoc.save();
+
+                // Criar download
+                const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `Certificado_YOROZU_${destinatario.replace(/\s+/g, '_')}.pdf`;
+                link.download = `Certificado_YOROZU_${cleanedDestinatario.replace(/\s+/g, '_')}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-            }
-            // ========== EXIBIR MENSAGENS ==========
-            async function displayMessages() {
-                const messages = await getAllMessages();
-                const container = document.getElementById('messagesContainer');
 
-                if (messages.length === 0) {
-                    container.innerHTML = `
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar certificado. Por favor, use uma mensagem mais curta e sem caracteres especiais.');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO ==========
+        async function criarPDFAlternativo(remetente, destinatario, mensagem) {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const page = pdfDoc.addPage([600, 400]);
+            const { width, height } = page.getSize();
+
+            // Configurações
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+            const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const color = PDFLib.rgb(0.05, 0.17, 0.36);
+
+            // Título
+            page.drawText('CERTIFICADO DE RECONHECIMENTO', {
+                x: 50,
+                y: height - 60,
+                size: 24,
+                font: font,
+                color: color,
+            });
+
+            // Logo YOROZU
+            page.drawText('YOROZU CORPORATION', {
+                x: 50,
+                y: height - 100,
+                size: 18,
+                font: font,
+                color: color,
+            });
+
+            // Destinatário
+            page.drawText(`Para: ${destinatario}`, {
+                x: 50,
+                y: height - 160,
+                size: 22,
+                font: font,
+            });
+
+            // Mensagem formatada
+            const messageLines = formatMessageLines(mensagem, 60, 6);
+            let yPos = height - 180;
+            for (let i = 0; i < messageLines.length; i++) {
+                page.drawText(messageLines[i], {
+                    x: 50,
+                    y: yPos,
+                    size: 14,
+                    font: regularFont,
+                });
+                yPos -= 25;
+            }
+
+            // Remetente
+            page.drawText({ remetente }, {
+                x: 50,
+                y: 100,
+                size: 16,
+                font: font,
+            });
+
+            // Data
+            const data = new Date().toLocaleDateString('pt-BR');
+            page.drawText(`Data: ${data}`, {
+                x: 50,
+                y: 70,
+                size: 14,
+                font: regularFont,
+            });
+
+            // Salvar PDF
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Certificado_YOROZU_${destinatario.replace(/\s+/g, '_')}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ========== FUNÇÕES PARA MARCAÇÃO DE IMPRESSÃO ==========
+        async function markAsPrinted(messageId) {
+            try {
+                const response = await makeAuthenticatedRequest(`/messages/${messageId}/printed`, {
+                    method: 'PUT'
+                });
+
+                if (response.success) {
+                    // Encontrar o card da mensagem
+                    const messageCard = document.querySelector(`.message-card[data-id="${messageId}"]`);
+
+                    if (messageCard) {
+                        // Adicionar classe de animação
+                        messageCard.classList.add('slide-down');
+
+                        // Aguardar animação e mover para baixo
+                        setTimeout(async () => {
+                            // Recarregar mensagens ordenadas
+                            await displayMessagesOrdered();
+                        }, 500);
+                    }
+
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao marcar como impresso:', error);
+                alert(`Erro: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Função para buscar mensagens ordenadas (não impressas primeiro)
+        async function getAllMessagesOrdered() {
+            try {
+                const response = await makeAuthenticatedRequest('/messages/ordered');
+                if (response.success && response.data) {
+                    return response.data;
+                }
+                return [];
+            } catch (error) {
+                console.error('Erro ao buscar mensagens ordenadas:', error);
+                // Fallback para a rota normal
+                return getAllMessages();
+            }
+        }
+
+        // ========== EXIBIR MENSAGENS ORDENADAS ==========
+        async function displayMessagesOrdered() {
+            const messages = await getAllMessagesOrdered();
+            const container = document.getElementById('messagesContainer');
+
+            if (messages.length === 0) {
+                container.innerHTML = `
             <div class="no-messages">
                 <i class="fas fa-inbox"></i>
                 <h3>Nenhuma mensagem encontrada</h3>
                 <p>Ainda não há mensagens de reconhecimento no sistema.</p>
             </div>
         `;
-                    return;
-                }
+                return;
+            }
 
-                let html = '';
-                messages.forEach((message, index) => {
-                    const dataFormatada = message.data_envio ?
-                        new Date(message.data_envio).toLocaleDateString('pt-BR') :
-                        new Date().toLocaleDateString('pt-BR');
+            // Separar mensagens impressas e não impressas
+            const pendingMessages = messages.filter(msg => !msg.isprinted);
+            const printedMessages = messages.filter(msg => msg.isprinted);
 
-                    const mensagemPreview = message.mensagem.length > 200 ?
-                        message.mensagem.substring(0, 200) + '...' :
-                        message.mensagem;
+            let html = '';
 
-                    // Usar base64 para evitar problemas com caracteres especiais
-                    const remetenteBase64 = btoa(unescape(encodeURIComponent(message.remetente_nome)));
-                    const destinatarioBase64 = btoa(unescape(encodeURIComponent(message.destinatario_nome)));
-                    const mensagemBase64 = btoa(unescape(encodeURIComponent(message.mensagem)));
+            // Mensagens não impressas (pendentes)
+            if (pendingMessages.length > 0) {
+                pendingMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, false);
+                });
+            }
 
-                    html += `
-            <div class="message-card">
-                <div class="message-header">
+            // Mensagens impressas
+            if (printedMessages.length > 0) {
+                html += `<h4 class="printed-section-title"><i class="fas fa-print"></i> Já Impressas (${printedMessages.length})</h4>`;
+
+                printedMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, true);
+                });
+            }
+
+            container.innerHTML = html;
+
+            // Adicionar event listeners
+            addMessageEventListeners();
+        }
+
+        // ========== GERAR HTML DO CARD DA MENSAGEM ==========
+        function generateMessageCardHTML(message, isPrinted) {
+            const dataFormatada = message.created_at ?
+                new Date(message.created_at).toLocaleDateString('pt-BR') :
+                new Date().toLocaleDateString('pt-BR');
+
+            const horaFormatada = message.created_at ?
+                new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) :
+                '';
+
+            const mensagemPreview = message.mensagem.length > 200 ?
+                message.mensagem.substring(0, 200) + '...' :
+                message.mensagem;
+
+            // Usar base64 para evitar problemas com caracteres especiais
+            const remetenteBase64 = btoa(unescape(encodeURIComponent(message.remetente_nome)));
+            const destinatarioBase64 = btoa(unescape(encodeURIComponent(message.destinatario_nome)));
+            const mensagemBase64 = btoa(unescape(encodeURIComponent(message.mensagem)));
+
+            // Data de impressão se disponível
+            const printedDate = message.printed_at ?
+                new Date(message.printed_at).toLocaleDateString('pt-BR') :
+                '';
+
+            return `
+        <div class="message-card ${isPrinted ? 'imprinted' : ''}" data-id="${message.id}">
+            <div class="message-header">
+                <div class="message-info">
                     <div class="message-from-to">
                         <div class="message-from">
                             <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
@@ -599,400 +667,177 @@
                         </div>
                     </div>
                     <div class="message-date">
-                        <i class="far fa-clock"></i> ${dataFormatada}
+                        <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
+                        ${isPrinted && printedDate ?
+                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
+                    `<span class="status-badge pending">PENDENTE</span>`
+                }
                     </div>
                 </div>
-                <div class="message-content">
-                    ${mensagemPreview}
-                </div>
-                <div class="message-actions">
-                    <button class="btn btn-certificate generate-pdf-btn"
-                            data-remetente="${remetenteBase64}"
-                            data-destinatario="${destinatarioBase64}"
-                            data-mensagem="${mensagemBase64}">
-                        <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
-                    </button>
+                <div class="message-status">
+                    ${!isPrinted ?
+                    `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
+                            <i class="fas fa-check-circle"></i> Marcar como Impresso
+                        </button>` :
+                    ''
+                }
                 </div>
             </div>
-        `;
+            <div class="message-content">
+                ${mensagemPreview}
+            </div>
+            <div class="message-actions">
+                <button class="btn btn-certificate generate-pdf-btn"
+                        data-remetente="${remetenteBase64}"
+                        data-destinatario="${destinatarioBase64}"
+                        data-mensagem="${mensagemBase64}">
+                    <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
+                </button>
+                <button class="btn btn-delete delete-message-btn" data-id="${message.id}">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    `;
+        }
+
+        // ========== ADICIONAR EVENT LISTENERS ==========
+        function addMessageEventListeners() {
+            // Botões de gerar PDF
+            document.querySelectorAll('.generate-pdf-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
+                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
+                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
+                    gerarCertificadoPDF(remetente, destinatario, mensagem);
                 });
+            });
 
-                container.innerHTML = html;
+            // Botões de marcar como impresso
+            document.querySelectorAll('.mark-printed-btn').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const messageId = this.getAttribute('data-id');
+                    const confirmed = confirm('Marcar esta mensagem como impressa? Ela será movida para a seção "Já Impressas".');
 
-                // Adicionar event listeners a todos os botões
-                document.querySelectorAll('.generate-pdf-btn').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
-                        const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
-                        const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
-                        gerarCertificadoPDF(remetente, destinatario, mensagem);
-                    });
-                });
-            }
-            // ========== INICIALIZAÇÃO ==========
-            document.addEventListener('DOMContentLoaded', function () {
-                // Carregar dados
-                displayStats();
-                displayMessages();
+                    if (confirmed) {
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
 
-                // Configurar botão de excluir todas
-                document.getElementById('deleteAllMessages').addEventListener('click', async function () {
-                    const messages = await getAllMessages();
-                    const totalMessages = messages.length;
-
-                    if (totalMessages === 0) {
-                        alert('Não há mensagens para excluir.');
-                        return;
-                    }
-
-                    document.getElementById('confirmDeleteAllText').textContent =
-                        `Tem certeza que deseja excluir todas as ${totalMessages} mensagens? Esta ação não pode ser desfeita.`;
-                    document.getElementById('confirmDeleteAllModal').style.display = 'flex';
-                });
-
-                // Configurar modal de exclusão
-                document.getElementById('cancelDeleteAll').addEventListener('click', function () {
-                    document.getElementById('confirmDeleteAllModal').style.display = 'none';
-                });
-
-                document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
-                    const success = await deleteAllMessages();
-                    if (success) {
-                        await displayStats();
-                        await displayMessages();
-                    }
-                    document.getElementById('confirmDeleteAllModal').style.display = 'none';
-                });
-
-                // Fechar modal ao clicar fora
-                document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
-                    if (e.target === this) {
-                        this.style.display = 'none';
+                        await markAsPrinted(messageId);
                     }
                 });
             });
 
-            // rh.html (adicione estas funções e atualize as existentes)
+            // Botões de exclusão individual
+            document.querySelectorAll('.delete-message-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const messageId = this.getAttribute('data-id');
+                    const messageCard = this.closest('.message-card');
+                    const destinatario = messageCard.querySelector('.message-to').textContent.replace('Para:', '').trim();
 
-            // ========== FUNÇÕES PARA MARCAÇÃO DE IMPRESSÃO ==========
-            async function markAsPrinted(messageId) {
-                try {
-                    const response = await makeAuthenticatedRequest(`/messages/${messageId}/printed`, {
-                        method: 'PUT'
-                    });
+                    // Configurar o texto do modal
+                    document.getElementById('confirmDeleteText').textContent =
+                        `Tem certeza que deseja excluir a mensagem para ${destinatario}? Esta ação não pode ser desfeita.`;
 
-                    if (response.success) {
-                        // Encontrar o card da mensagem
-                        const messageCard = document.querySelector(`.message-card[data-id="${messageId}"]`);
+                    // Armazenar o ID da mensagem a ser excluída
+                    currentMessageIdToDelete = messageId;
 
-                        if (messageCard) {
-                            // Adicionar classe de animação
-                            messageCard.classList.add('slide-down');
+                    // Exibir o modal
+                    document.getElementById('confirmDeleteModal').style.display = 'flex';
+                });
+            });
+        }
 
-                            // Aguardar animação e mover para baixo
-                            setTimeout(async () => {
-                                // Recarregar mensagens ordenadas
-                                await displayMessagesOrdered();
-                            }, 500);
+        // ========== CONFIGURAR MODAL DE EXCLUSÃO INDIVIDUAL ==========
+        function setupIndividualDeleteModal() {
+            const modal = document.getElementById('confirmDeleteModal');
+            const cancelBtn = document.getElementById('cancelDelete');
+            const confirmBtn = document.getElementById('confirmDelete');
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    currentMessageIdToDelete = null;
+                });
+            }
+            
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', async function() {
+                    if (currentMessageIdToDelete) {
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+                        
+                        const success = await deleteMessage(currentMessageIdToDelete);
+                        if (success) {
+                            modal.style.display = 'none';
+                            await displayStats();
+                            await displayMessagesOrdered();
                         }
-
-                        return true;
+                        
+                        this.disabled = false;
+                        this.innerHTML = 'Excluir';
+                        currentMessageIdToDelete = null;
                     }
-                    return false;
-                } catch (error) {
-                    console.error('Erro ao marcar como impresso:', error);
-                    alert(`Erro: ${error.message}`);
-                    return false;
-                }
+                });
             }
-
-            // Função para buscar mensagens ordenadas (não impressas primeiro)
-            async function getAllMessagesOrdered() {
-                try {
-                    const response = await makeAuthenticatedRequest('/messages/ordered');
-                    if (response.success && response.data) {
-                        return response.data;
+            
+            // Fechar modal ao clicar fora
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                        currentMessageIdToDelete = null;
                     }
-                    return [];
-                } catch (error) {
-                    console.error('Erro ao buscar mensagens ordenadas:', error);
-                    // Fallback para a rota normal
-                    return getAllMessages();
-                }
+                });
             }
+        }
 
-            // ========== EXIBIR MENSAGENS ORDENADAS ==========
-            async function displayMessagesOrdered() {
+        // ========== INICIALIZAÇÃO ATUALIZADA ==========
+        document.addEventListener('DOMContentLoaded', function () {
+            // Carregar dados
+            displayStats();
+            displayMessagesOrdered();
+
+            // Configurar botão de excluir todas
+            document.getElementById('deleteAllMessages').addEventListener('click', async function () {
                 const messages = await getAllMessagesOrdered();
-                const container = document.getElementById('messagesContainer');
+                const totalMessages = messages.length;
 
-                if (messages.length === 0) {
-                    container.innerHTML = `
-            <div class="no-messages">
-                <i class="fas fa-inbox"></i>
-                <h3>Nenhuma mensagem encontrada</h3>
-                <p>Ainda não há mensagens de reconhecimento no sistema.</p>
-            </div>
-        `;
+                if (totalMessages === 0) {
+                    alert('Não há mensagens para excluir.');
                     return;
                 }
 
-                // Separar mensagens impressas e não impressas
-                const pendingMessages = messages.filter(msg => !msg.isprinted);
-                const printedMessages = messages.filter(msg => msg.isprinted);
-
-                let html = '';
-
-                // Mensagens não impressas (pendentes)
-                if (pendingMessages.length > 0) {
-                    pendingMessages.forEach((message, index) => {
-                        html += generateMessageCardHTML(message, false);
-                    });
-                }
-
-                // Mensagens impressas
-                if (printedMessages.length > 0) {
-                    html += `<h4 class="printed-section-title"><i class="fas fa-print"></i> Já Impressas (${printedMessages.length})</h4>`;
-
-                    printedMessages.forEach((message, index) => {
-                        html += generateMessageCardHTML(message, true);
-                    });
-                }
-
-                container.innerHTML = html;
-
-                // Adicionar event listeners
-                addMessageEventListeners();
-            }
-
-            // ========== GERAR HTML DO CARD DA MENSAGEM ==========
-            // ========== GERAR HTML DO CARD DA MENSAGEM ==========
-            function generateMessageCardHTML(message, isPrinted) {
-                const dataFormatada = message.created_at ?
-                    new Date(message.created_at).toLocaleDateString('pt-BR') :
-                    new Date().toLocaleDateString('pt-BR');
-
-                const horaFormatada = message.created_at ?
-                    new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) :
-                    '';
-
-                const mensagemPreview = message.mensagem.length > 200 ?
-                    message.mensagem.substring(0, 200) + '...' :
-                    message.mensagem;
-
-                // Usar base64 para evitar problemas com caracteres especiais
-                const remetenteBase64 = btoa(unescape(encodeURIComponent(message.remetente_nome)));
-                const destinatarioBase64 = btoa(unescape(encodeURIComponent(message.destinatario_nome)));
-                const mensagemBase64 = btoa(unescape(encodeURIComponent(message.mensagem)));
-
-                // Data de impressão se disponível
-                const printedDate = message.printed_at ?
-                    new Date(message.printed_at).toLocaleDateString('pt-BR') :
-                    '';
-
-                return `
-    <div class="message-card ${isPrinted ? 'imprinted' : ''}" data-id="${message.id}">
-        <div class="message-header">
-            <div class="message-info">
-                <div class="message-from-to">
-                    <div class="message-from">
-                        <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
-                    </div>
-                    <div class="message-to">
-                        <strong><i class="fas fa-user-friends"></i> Para:</strong> ${message.destinatario_nome}
-                    </div>
-                </div>
-                <div class="message-date">
-                    <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
-                    ${isPrinted && printedDate ?
-                        `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
-                        `<span class="status-badge pending">PENDENTE</span>`
-                    }
-                </div>
-            </div>
-            <div class="message-status">
-                ${!isPrinted ?
-                        `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
-                        <i class="fas fa-check-circle"></i> Marcar como Impresso
-                    </button>` :
-                        ''
-                    }
-            </div>
-        </div>
-        <div class="message-content">
-            ${mensagemPreview}
-        </div>
-        <div class="message-actions">
-            <button class="btn btn-certificate generate-pdf-btn"
-                    data-remetente="${remetenteBase64}"
-                    data-destinatario="${destinatarioBase64}"
-                    data-mensagem="${mensagemBase64}">
-                <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
-            </button>
-            <button class="btn btn-delete delete-message-btn" data-id="${message.id}">
-                <i class="fas fa-trash"></i> Excluir
-            </button>
-        </div>
-    </div>
-    `;
-            }
-
-            // ========== ADICIONAR EVENT LISTENERS ==========
-            function addMessageEventListeners() {
-                // Botões de gerar PDF
-                document.querySelectorAll('.generate-pdf-btn').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
-                        const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
-                        const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
-                        gerarCertificadoPDF(remetente, destinatario, mensagem);
-                    });
-                });
-
-                // Botões de marcar como impresso
-                document.querySelectorAll('.mark-printed-btn').forEach(button => {
-                    button.addEventListener('click', async function () {
-                        const messageId = this.getAttribute('data-id');
-                        const confirmed = confirm('Marcar esta mensagem como impressa? Ela será movida para a seção "Já Impressas".');
-
-                        if (confirmed) {
-                            this.disabled = true;
-                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
-
-                            await markAsPrinted(messageId);
-                        }
-                    });
-                });
-
-                // Botões de exclusão individual
-                document.querySelectorAll('.delete-message-btn').forEach(button => {
-                    button.addEventListener('click', async function () {
-                        const messageId = this.getAttribute('data-id');
-                        const messageCard = this.closest('.message-card');
-                        const destinatario = messageCard.querySelector('.message-to').textContent.replace('Para:', '').trim();
-
-                        const confirmed = confirm(`Tem certeza que deseja excluir a mensagem para ${destinatario}? Esta ação não pode ser desfeita.`);
-
-                        if (confirmed) {
-                            this.disabled = true;
-                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
-
-                            const success = await deleteMessage(messageId);
-                            if (success) {
-                                // Adicionar animação de saída
-                                messageCard.style.opacity = '0.5';
-                                messageCard.style.transform = 'translateX(-100px)';
-
-                                setTimeout(async () => {
-                                    // Recarregar mensagens e estatísticas
-                                    await displayStats();
-                                    await displayMessagesOrdered();
-                                }, 300);
-                            } else {
-                                this.disabled = false;
-                                this.innerHTML = '<i class="fas fa-trash"></i> Excluir';
-                            }
-                        }
-                    });
-                });
-            }
-            // ========== INICIALIZAÇÃO ATUALIZADA ==========
-            document.addEventListener('DOMContentLoaded', function () {
-                // Carregar dados usando a nova função ordenada
-                displayStats();
-                displayMessagesOrdered(); // Mude de displayMessages() para displayMessagesOrdered()
-
-                // Configurar botão de excluir todas
-                document.getElementById('deleteAllMessages').addEventListener('click', async function () {
-                    const messages = await getAllMessagesOrdered(); // Usar função ordenada
-                    const totalMessages = messages.length;
-
-                    if (totalMessages === 0) {
-                        alert('Não há mensagens para excluir.');
-                        return;
-                    }
-
-                    document.getElementById('confirmDeleteAllText').textContent =
-                        `Tem certeza que deseja excluir todas as ${totalMessages} mensagens? Esta ação não pode ser desfeita.`;
-                    document.getElementById('confirmDeleteAllModal').style.display = 'flex';
-                });
-
-                // Restante do código permanece igual...
-                document.getElementById('cancelDeleteAll').addEventListener('click', function () {
-                    document.getElementById('confirmDeleteAllModal').style.display = 'none';
-                });
-
-                document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
-                    const success = await deleteAllMessages();
-                    if (success) {
-                        await displayStats();
-                        await displayMessagesOrdered(); // Atualizar para usar função ordenada
-                    }
-                    document.getElementById('confirmDeleteAllModal').style.display = 'none';
-                });
-
-                document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
-                    if (e.target === this) {
-                        this.style.display = 'none';
-                    }
-                });
-            });
-            // Variáveis para controle da exclusão individual
-            let currentMessageIdToDelete = null;
-
-            // Função para configurar o modal de exclusão individual
-            function setupIndividualDeleteModal() {
-                const modal = document.getElementById('confirmDeleteModal');
-                const cancelBtn = document.getElementById('cancelDelete');
-                const confirmBtn = document.getElementById('confirmDelete');
-
-                if (cancelBtn) {
-                    cancelBtn.addEventListener('click', function () {
-                        modal.style.display = 'none';
-                        currentMessageIdToDelete = null;
-                    });
-                }
-
-                if (confirmBtn) {
-                    confirmBtn.addEventListener('click', async function () {
-                        if (currentMessageIdToDelete) {
-                            this.disabled = true;
-                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
-
-                            const success = await deleteMessage(currentMessageIdToDelete);
-                            if (success) {
-                                modal.style.display = 'none';
-                                await displayStats();
-                                await displayMessagesOrdered();
-                            }
-
-                            this.disabled = false;
-                            this.innerHTML = 'Excluir';
-                            currentMessageIdToDelete = null;
-                        }
-                    });
-                }
-
-                // Fechar modal ao clicar fora
-                if (modal) {
-                    modal.addEventListener('click', function (e) {
-                        if (e.target === this) {
-                            this.style.display = 'none';
-                            currentMessageIdToDelete = null;
-                        }
-                    });
-                }
-            }
-
-            // Inicializar o modal na inicialização da página
-            document.addEventListener('DOMContentLoaded', function () {
-                // ... código existente ...
-                setupIndividualDeleteModal();
-                // ... resto do código ...
+                document.getElementById('confirmDeleteAllText').textContent =
+                    `Tem certeza que deseja excluir todas as ${totalMessages} mensagens? Esta ação não pode ser desfeita.`;
+                document.getElementById('confirmDeleteAllModal').style.display = 'flex';
             });
 
-        </script>
+            // Configurar modal de exclusão em lote
+            document.getElementById('cancelDeleteAll').addEventListener('click', function () {
+                document.getElementById('confirmDeleteAllModal').style.display = 'none';
+            });
 
+            document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
+                const success = await deleteAllMessages();
+                if (success) {
+                    await displayStats();
+                    await displayMessagesOrdered();
+                }
+                document.getElementById('confirmDeleteAllModal').style.display = 'none';
+            });
+
+            // Configurar modal de exclusão individual
+            setupIndividualDeleteModal();
+
+            // Fechar modais ao clicar fora
+            document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
