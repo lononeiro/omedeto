@@ -9,22 +9,41 @@ const {
 
 const app = express();
 
-// Configuração CORS
+// Substitua sua configuração atual do CORS por esta:
+
+// Configuração CORS atualizada
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',')
   : ['http://localhost:5501', 'http://127.0.0.1:5500', 'http://localhost:3001', 'https://omedeto-front-end.onrender.com'];
 
+// Middleware CORS mais permissivo para desenvolvimento
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permite requisições sem origem (como mobile apps ou curl)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Verifica se a origem está na lista de permitidas
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      // Log para debug
+      console.log('CORS bloqueado para origem:', origin);
+      console.log('Origens permitidas:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: false
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Kuma-Revision'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
 
+// Adicione este middleware APÓS o CORS e ANTES das rotas
+app.options('*', cors()); // Habilita preflight para todas as rotas
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
