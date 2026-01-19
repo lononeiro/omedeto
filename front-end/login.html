@@ -210,99 +210,7 @@
         // API URL - ajuste conforme necessário
         const API_URL = 'https://omedeto.onrender.com/api/login';
         
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Obter valores do formulário
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const loginButton = document.getElementById('loginButton');
-            const buttonText = document.getElementById('buttonText');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            // Validação básica
-            if (!email || !password) {
-                showError('Por favor, preencha todos os campos.');
-                return;
-            }
-            
-            // Desabilitar botão e mostrar loading
-            loginButton.disabled = true;
-            buttonText.innerHTML = '<div class="loading"></div>Entrando...';
-            
-            try {
-                // Fazer requisição para API (CORRIGIDO: agora envia email em vez de username)
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: email,  // CORRETO: agora envia email
-                        password: password
-                    })
-                });
-                
-                // Verificar status da resposta
-                if (!response.ok) {
-                    // Tentar obter mensagem de erro da resposta
-                    let errorData;
-                    try {
-                        errorData = await response.json();
-                    } catch {
-                        errorData = null;
-                    }
-                    
-                    if (errorData && errorData.error) {
-                        throw new Error(errorData.error);
-                    } else {
-                        throw new Error(`Erro HTTP: ${response.status}`);
-                    }
-                }
-                
-                // Parsear a resposta como JSON
-                const data = await response.json();
-                
-                // Verificar se login foi bem-sucedido (de acordo com seu backend)
-                if (data.success === true) {
-                    console.log('Login realizado com sucesso:', data);
-                    
-                    // Salvar token no localStorage
-                    if (data.token) {
-                        localStorage.setItem('token', data.token);
-                        localStorage.setItem('user', JSON.stringify(data.user));
-                    }
-                    
-                    // Redirecionar para dashboard
-                    window.location.href = 'dashboard.html';
-                    
-                } else {
-                    // Mostrar mensagem de erro do servidor
-                    const errorMsg = data.error || 'Credenciais inválidas';
-                    showError(errorMsg);
-                }
-                
-            } catch (error) {
-                console.error('Erro no login:', error);
-                
-                // Verificar tipo específico de erro
-                if (error.message.includes('Failed to fetch')) {
-                    showError('Erro de conexão. Verifique sua internet.');
-                } else if (error.message.includes('404')) {
-                    showError('Servidor não encontrado. Tente novamente mais tarde.');
-                } else if (error.message.includes('500')) {
-                    showError('Erro interno do servidor. Tente novamente mais tarde.');
-                } else {
-                    showError('Erro no login: ' + error.message);
-                }
-                
-            } finally {
-                // Reabilitar botão
-                loginButton.disabled = false;
-                buttonText.textContent = 'Entrar';
-            }
-        });
-        
+        // Função para mostrar mensagens de erro
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
             errorMessage.textContent = message;
@@ -314,29 +222,131 @@
             }, 5000);
         }
         
-        // Limpar mensagem de erro ao começar a digitar
-        document.getElementById('email').addEventListener('input', function() {
-            document.getElementById('errorMessage').style.display = 'none';
-        });
-        
-        document.getElementById('password').addEventListener('input', function() {
-            document.getElementById('errorMessage').style.display = 'none';
-        });
-        
-        // Enter para enviar formulário
-        document.getElementById('password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        // Função para inicializar o formulário de login
+        function initLoginForm() {
+            const loginForm = document.getElementById('loginForm');
+            const loginButton = document.getElementById('loginButton');
+            const buttonText = document.getElementById('buttonText');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (!loginForm || !loginButton || !buttonText || !errorMessage) {
+                console.error('Elementos do formulário não encontrados!');
+                return;
             }
-        });
+            
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Obter valores do formulário
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
+                
+                // Validação básica
+                if (!email || !password) {
+                    showError('Por favor, preencha todos os campos.');
+                    return;
+                }
+                
+                // Desabilitar botão e mostrar loading
+                loginButton.disabled = true;
+                buttonText.innerHTML = '<div class="loading"></div>Entrando...';
+                
+                try {
+                    // Fazer requisição para API
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+                    });
+                    
+                    // Verificar status da resposta
+                    if (!response.ok) {
+                        // Tentar obter mensagem de erro da resposta
+                        let errorData;
+                        try {
+                            errorData = await response.json();
+                        } catch {
+                            errorData = null;
+                        }
+                        
+                        if (errorData && errorData.error) {
+                            throw new Error(errorData.error);
+                        } else {
+                            throw new Error(`Erro HTTP: ${response.status}`);
+                        }
+                    }
+                    
+                    // Parsear a resposta como JSON
+                    const data = await response.json();
+                    
+                    // Verificar se login foi bem-sucedido (de acordo com seu backend)
+                    if (data.success === true) {
+                        console.log('Login realizado com sucesso:', data);
+                        
+                        // Salvar token no localStorage
+                        if (data.token) {
+                            localStorage.setItem('token', data.token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                        }
+                        
+                        // Redirecionar para dashboard
+                        window.location.href = 'dashboard.html';
+                        
+                    } else {
+                        // Mostrar mensagem de erro do servidor
+                        const errorMsg = data.error || 'Credenciais inválidas';
+                        showError(errorMsg);
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro no login:', error);
+                    
+                    // Verificar tipo específico de erro
+                    if (error.message.includes('Failed to fetch')) {
+                        showError('Erro de conexão. Verifique sua internet.');
+                    } else if (error.message.includes('404')) {
+                        showError('Servidor não encontrado. Tente novamente mais tarde.');
+                    } else if (error.message.includes('500')) {
+                        showError('Erro interno do servidor. Tente novamente mais tarde.');
+                    } else {
+                        showError('Erro no login: ' + error.message);
+                    }
+                    
+                } finally {
+                    // Reabilitar botão
+                    loginButton.disabled = false;
+                    buttonText.textContent = 'Entrar';
+                }
+            });
+            
+            // Limpar mensagem de erro ao começar a digitar
+            document.getElementById('email').addEventListener('input', function() {
+                errorMessage.style.display = 'none';
+            });
+            
+            document.getElementById('password').addEventListener('input', function() {
+                errorMessage.style.display = 'none';
+            });
+            
+            // Enter para enviar formulário
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loginForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
         
-        // Se já estiver logado, redirecionar para dashboard
-        window.addEventListener('load', function() {
+        // Verificar se já está logado
+        function checkLoginStatus() {
             const token = localStorage.getItem('token');
             if (token) {
-                // Verificar se o token é válido
                 try {
-                    // Verificar se o token não expirou
+                    // Verificar se o token é válido
                     const tokenData = JSON.parse(atob(token.split('.')[1]));
                     const currentTime = Math.floor(Date.now() / 1000);
                     
@@ -354,7 +364,27 @@
                     localStorage.removeItem('user');
                 }
             }
+        }
+        
+        // Inicializar quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar status de login primeiro
+            checkLoginStatus();
+            
+            // Inicializar formulário de login
+            initLoginForm();
+            
+            console.log('Formulário de login inicializado!');
         });
+        
+        // Fallback: se o DOM já estiver carregado
+        if (document.readyState === 'loading') {
+            // Ainda carregando, aguardar evento DOMContentLoaded
+        } else {
+            // DOM já carregado, executar agora
+            checkLoginStatus();
+            initLoginForm();
+        }
     </script>
 </body>
 </html>
