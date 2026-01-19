@@ -294,8 +294,8 @@
                             localStorage.setItem('user', JSON.stringify(data.user));
                         }
                         
-                        // Redirecionar para dashboard
-                        window.location.href = 'dashboard.html';
+                        // Redirecionar para rh
+                        window.location.href = 'rh.html';
                         
                     } else {
                         // Mostrar mensagem de erro do servidor
@@ -352,7 +352,7 @@
                     
                     if (tokenData.exp > currentTime) {
                         // Token ainda válido, redirecionar
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'rh.html';
                     } else {
                         // Token expirado, remover
                         localStorage.removeItem('token');
