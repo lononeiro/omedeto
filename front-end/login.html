@@ -70,20 +70,20 @@
         }
 
         // Login via backend
-        async function loginBackend(email, password) {
-            try {
-                const response = await fetch(`${API_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
+        // async function loginBackend(email, password) {
+        //     try {
+        //         const response = await fetch(`${API_URL}/login`, {
+        //             method: 'POST',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify({ email, password })
+        //         });
                 
-                return await response.json();
-            } catch (error) {
-                console.error('Erro de conexão:', error);
-                return { success: false, message: 'Erro ao conectar com o servidor' };
-            }
-        }
+        //         return await response.json();
+        //     } catch (error) {
+        //         console.error('Erro de conexão:', error);
+        //         return { success: false, message: 'Erro ao conectar com o servidor' };
+        //     }
+        // }
 
         // Login simplificado (fallback se backend não estiver disponível)
         function loginLocal(email, password) {
@@ -115,7 +115,7 @@
             
             try {
                 // Tentar login no backend primeiro
-                let result = await loginBackend(email, password);
+                let result = await loginLocal(email, password);
                 
                 // Se backend falhar ou não estiver disponível, usar login local
                 if (!result.success && result.message.includes('conectar')) {
