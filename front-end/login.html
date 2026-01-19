@@ -156,6 +156,21 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        .logout-button {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .logout-button:hover {
+            background: rgba(255, 107, 107, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -167,6 +182,11 @@
         
         <div class="login-form">
             <h2>Acesso Restrito - RH</h2>
+            
+            <div id="alreadyLoggedIn" style="display: none; text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(77, 166, 255, 0.1); border-radius: 8px;">
+                <p><i class="fas fa-user-check" style="color: #4da6ff; margin-right: 8px;"></i> Você já está logado!</p>
+                <button onclick="logout()" class="logout-button">Sair e fazer novo login</button>
+            </div>
             
             <form id="loginForm">
                 <div class="form-group">
@@ -220,6 +240,39 @@
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 5000);
+        }
+        
+        // Função para logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            location.reload(); // Recarrega a página
+        }
+        
+        // Função para verificar se já está logado (apenas para mostrar mensagem)
+        function checkIfLoggedIn() {
+            const token = localStorage.getItem('token');
+            const alreadyLoggedInDiv = document.getElementById('alreadyLoggedIn');
+            
+            if (token) {
+                try {
+                    // Verificar se o token é válido
+                    const tokenData = JSON.parse(atob(token.split('.')[1]));
+                    const currentTime = Math.floor(Date.now() / 1000);
+                    
+                    if (tokenData.exp > currentTime) {
+                        // Token válido - mostrar mensagem que já está logado
+                        alreadyLoggedInDiv.style.display = 'block';
+                        // Não redireciona automaticamente!
+                    } else {
+                        // Token expirado, remover
+                        logout();
+                    }
+                } catch {
+                    // Token inválido, remover
+                    logout();
+                }
+            }
         }
         
         // Função para inicializar o formulário de login
@@ -294,7 +347,7 @@
                             localStorage.setItem('user', JSON.stringify(data.user));
                         }
                         
-                        // Redirecionar para rh
+                        // Redirecionar para rh.html APENAS após login bem-sucedido
                         window.location.href = 'rh.html';
                         
                     } else {
@@ -341,35 +394,10 @@
             });
         }
         
-        // Verificar se já está logado
-        function checkLoginStatus() {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    // Verificar se o token é válido
-                    const tokenData = JSON.parse(atob(token.split('.')[1]));
-                    const currentTime = Math.floor(Date.now() / 1000);
-                    
-                    if (tokenData.exp > currentTime) {
-                        // Token ainda válido, redirecionar
-                        window.location.href = 'rh.html';
-                    } else {
-                        // Token expirado, remover
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                    }
-                } catch {
-                    // Token inválido, remover
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                }
-            }
-        }
-        
         // Inicializar quando o DOM estiver carregado
         document.addEventListener('DOMContentLoaded', function() {
-            // Verificar status de login primeiro
-            checkLoginStatus();
+            // Verificar se já está logado (apenas para mostrar mensagem)
+            checkIfLoggedIn();
             
             // Inicializar formulário de login
             initLoginForm();
@@ -382,9 +410,15 @@
             // Ainda carregando, aguardar evento DOMContentLoaded
         } else {
             // DOM já carregado, executar agora
-            checkLoginStatus();
+            checkIfLoggedIn();
             initLoginForm();
         }
+        
+        // Adicionar ícones do Font Awesome
+        const faLink = document.createElement('link');
+        faLink.rel = 'stylesheet';
+        faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(faLink);
     </script>
 </body>
 </html>
