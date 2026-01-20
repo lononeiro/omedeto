@@ -380,6 +380,10 @@ app.post('/api/messages/public', async (req, res) => {
       });
     }
 
+    // if (messageData.mensagem.length > 500) {
+    //   return res.status(400).json({ error: "Mensagem muito longa" });
+    // }
+
     const result = await messageQueries.saveMessage(messageData);
 
     if (!result.success) {

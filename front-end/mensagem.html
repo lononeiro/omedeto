@@ -1,169 +1,215 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOROZU - Enviar Reconhecimento</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles/index.css">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles/index.css">
 </head>
+
 <body>
-    <div class="container"> 
+    <div class="container">
+
         <header class="yorozu-header">
             <div class="company-logo">
                 <div class="japanese-name">株式会社 三〇六</div>
                 <div class="english-name">YOROZU CORPORATION</div>
-                <div class="app-title">Sistema de Reconhecimento entre Colaboradores</div>
+                <div class="app-title" id="appTitle"></div>
             </div>
         </header>
-        
+
+        <div style="display:flex; justify-content:flex-end; margin:10px 0;">
+            <button id="langToggle" class="btn btn-secondary"></button>
+        </div>
+
         <div class="nav-container">
             <a href="index.html" class="nav-btn active">
-                <i class="fas fa-envelope"></i> Enviar Reconhecimento
+                <i class="fas fa-envelope"></i>
+                <span id="navSend"></span>
             </a>
             <a href="rh.html" class="nav-btn">
-                <i class="fas fa-eye"></i> Visualizar Mensagens (RH)
+                <i class="fas fa-eye"></i>
+                <span id="navView"></span>
             </a>
         </div>
-        
-        <!-- Formulário de envio de mensagem -->
+
         <div class="form-container">
-            <h1 class="page-title"><i class="fas fa-pen-alt"></i> Enviar Mensagem de Reconhecimento</h1>
-            <p class="pagx  x">Reconheça o trabalho exemplar de seus colegas. Sua mensagem será registrada no sistema e poderá ser visualizada pelo departamento de RH.</p>
-            
+            <h1 class="page-title">
+                <i class="fas fa-pen-alt"></i>
+                <span id="titleSend"></span>
+            </h1>
+
+            <p id="descSend" class="pagx x"></p>
+
             <form id="messageForm">
+
                 <div class="form-group">
-                    <label for="remetente_nome" class="required">Seu Nome (Quem está enviando)</label>
-                    <input type="text" id="remetente_nome" name="remetente_nome" required placeholder="Digite seu nome completo">
+                    <label id="labelSender" for="remetente_nome" class="required"></label>
+                    <input id="remetente_nome" type="text" maxlength="50" required>
+                    <small id="senderLimit"></small>
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="destinatario_nome" class="required">Nome do Destinatário (Quem receberá)</label>
-                    <input type="text" id="destinatario_nome" name="destinatario_nome" required placeholder="Nome do colega que você deseja reconhecer">
+                    <label id="labelReceiver" for="destinatario_nome" class="required"></label>
+                    <input id="destinatario_nome" type="text" maxlength="50" required>
+                    <small id="receiverLimit"></small>
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="mensagem" class="required">Mensagem de Reconhecimento</label>
-                    <textarea id="mensagem" name="mensagem" required placeholder="Escreva aqui sua mensagem de reconhecimento e apreciação..."></textarea>
-                    <p style="margin-top: 8px; font-size: 0.9rem; color: #6c757d;"><i class="fas fa-lightbulb"></i> Dica: Seja específico sobre as contribuições do colega.</p>
+                    <label id="labelMessage" for="mensagem" class="required"></label>
+                    <textarea id="mensagem" maxlength="150" required></textarea>
+
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#6c757d;">
+                        <span id="tipText"></span>
+                        <span id="charLabel"></span>
+                    </div>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="reset" class="btn btn-secondary">
-                        <i class="fas fa-redo"></i> Limpar Formulário
+                        <i class="fas fa-redo"></i>
+                        <span id="btnReset"></span>
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Enviar Reconhecimento
+                        <i class="fas fa-paper-plane"></i>
+                        <span id="btnSend"></span>
                     </button>
                 </div>
+
             </form>
         </div>
-        
-        <!-- Modal de confirmação -->
+
         <div id="confirmationModal" class="modal">
             <div class="modal-content">
                 <button class="modal-close" id="closeModal">&times;</button>
-                <div class="modal-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h2 class="modal-title">Reconhecimento Enviado!</h2>
-                <p>Sua mensagem de reconhecimento foi registrada com sucesso no sistema.</p>
-                <p>O RH poderá visualizar esta mensagem e gerar um certificado em PDF.</p>
-                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
+                <h2 id="modalTitle" class="modal-title"></h2>
+                <p id="modalText"></p>
+                <div style="display:flex; justify-content:center; margin-top:20px;">
                     <button id="newMessageBtn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nova Mensagem
+                        <i class="fas fa-plus"></i>
+                        <span id="btnNewMessage"></span>
                     </button>
-                    <!-- <button id="viewMessagesBtn" class="btn btn-secondary">
-                        <i class="fas fa-eye"></i> Ver Todas as Mensagens
-                    </button> -->
                 </div>
             </div>
         </div>
-        
+
         <footer>
-            <p>YOROZU CORPORATION - Sistema de Reconhecimento entre Colaboradores</p>
-            <p class="yorozu-footer">株式会社 三〇六 - 従業員評価システム</p>
-            <p>Protótipo para demonstração interna. Dados armazenados no banco de dados Neon.</p>
+            <p id="footerText"></p>
+            <p id="footerJapanese" class="yorozu-footer"></p>
         </footer>
+
     </div>
 
     <script>
-        const API_URL = 'https://omedeto.onrender.com/api';
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('messageForm');
-            const confirmationModal = document.getElementById('confirmationModal');
-            const closeModal = document.getElementById('closeModal');
-            const newMessageBtn = document.getElementById('newMessageBtn');
-            const viewMessagesBtn = document.getElementById('viewMessagesBtn');
-            
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const messageData = {
-                    remetente_nome: document.getElementById('remetente_nome').value.trim(),
-                    destinatario_nome: document.getElementById('destinatario_nome').value.trim(),
-                    mensagem: document.getElementById('mensagem').value.trim()
-                };
-                
-                // Validação
-                if (!messageData.remetente_nome || !messageData.destinatario_nome || !messageData.mensagem) {
-                    alert('Por favor, preencha todos os campos obrigatórios.');
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(`${API_URL}/messages/public`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(messageData)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        // Mostrar modal
-                        confirmationModal.style.display = 'flex';
-                        
-                        // Limpar formulário
-                        form.reset();
-                    } else {
-                        alert(`Erro: ${result.error || 'Não foi possível enviar a mensagem'}`);
-                    }
-                } catch (error) {
-                    console.error('Erro:', error);
-                    alert('Erro ao conectar com o servidor. Tente novamente.');
-                }
+        const API_URL = "https://omedeto.onrender.com/api";
+
+        let currentLang = "pt";
+
+        const texts = {
+            pt: {
+                appTitle: "Sistema de Reconhecimento entre Colaboradores",
+                navSend: "Enviar Reconhecimento",
+                navView: "Visualizar Mensagens (RH)",
+                titleSend: "Enviar Mensagem de Reconhecimento",
+                descSend: "Reconheça o trabalho exemplar de seus colegas. Sua mensagem será registrada no sistema e poderá ser visualizada pelo departamento de RH.",
+                labelSender: "Seu Nome (Quem está enviando)",
+                labelReceiver: "Nome do Destinatário (Quem receberá)",
+                labelMessage: "Mensagem de Reconhecimento",
+                senderPlaceholder: "Digite seu nome completo",
+                receiverPlaceholder: "Nome do colega que você deseja reconhecer",
+                messagePlaceholder: "Escreva sua mensagem de reconhecimento...",
+                senderLimit: "Máx. 50 caracteres",
+                receiverLimit: "Máx. 50 caracteres",
+                charLabel: "0 / 150",
+                tipText: "Dica: Seja específico sobre as contribuições do colega.",
+                btnSend: "Enviar Reconhecimento",
+                btnReset: "Limpar Formulário",
+                btnNewMessage: "Nova Mensagem",
+                modalTitle: "Reconhecimento Enviado!",
+                modalText: "Sua mensagem foi registrada com sucesso.",
+                footerText: "YOROZU CORPORATION - Sistema de Reconhecimento entre Colaboradores",
+                footerJapanese: "株式会社 三〇六 - 従業員評価システム",
+                toggle: "日本語"
+            },
+            jp: {
+                appTitle: "従業員感謝・評価システム",
+                navSend: "感謝メッセージ送信",
+                navView: "人事部閲覧",
+                titleSend: "感謝メッセージの送信",
+                descSend: "同僚の優れた業績や貢献を称えましょう。メッセージはシステムに登録され、人事部が確認できます。",
+                labelSender: "送信者名",
+                labelReceiver: "受信者名",
+                labelMessage: "感謝・評価メッセージ",
+                senderPlaceholder: "氏名を入力してください",
+                receiverPlaceholder: "表彰したい同僚の名前",
+                messagePlaceholder: "感謝や評価のメッセージを入力してください",
+                senderLimit: "最大50文字",
+                receiverLimit: "最大50文字",
+                charLabel: "0 / 150",
+                tipText: "ヒント：同僚の具体的な貢献内容を書きましょう。",
+                btnSend: "送信",
+                btnReset: "入力内容をクリア",
+                btnNewMessage: "新しいメッセージ",
+                modalTitle: "送信完了",
+                modalText: "感謝メッセージは正常に登録されました。",
+                footerText: "YOROZU CORPORATION - 従業員感謝システム",
+                footerJapanese: "株式会社 三〇六 - 従業員評価システム",
+                toggle: "Português"
+            }
+        };
+
+        function applyLanguage() {
+            const t = texts[currentLang];
+            Object.keys(t).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = t[id];
             });
-            
-            // Fechar modal
-            closeModal.addEventListener('click', function() {
-                confirmationModal.style.display = 'none';
+            remetente_nome.placeholder = t.senderPlaceholder;
+            destinatario_nome.placeholder = t.receiverPlaceholder;
+            mensagem.placeholder = t.messagePlaceholder;
+            document.getElementById("langToggle").innerText = t.toggle;
+
+        }
+
+        langToggle.onclick = () => {
+            currentLang = currentLang === "pt" ? "jp" : "pt";
+            applyLanguage();
+        };
+
+        mensagem.oninput = () => {
+            charLabel.innerText = `${mensagem.value.length} / 150`;
+        };
+
+        messageForm.onsubmit = async e => {
+            e.preventDefault();
+            const res = await fetch(`${API_URL}/messages/public`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    remetente_nome: remetente_nome.value.trim(),
+                    destinatario_nome: destinatario_nome.value.trim(),
+                    mensagem: mensagem.value.trim()
+                })
             });
-            
-            // Nova mensagem
-            newMessageBtn.addEventListener('click', function() {
-                confirmationModal.style.display = 'none';
-                form.reset();
-                document.getElementById('remetente_nome').focus();
-            });
-            
-            // Ver mensagens
-            viewMessagesBtn.addEventListener('click', function() {
-                window.location.href = 'rh.html';
-            });
-            
-            // Fechar modal ao clicar fora
-            window.addEventListener('click', function(e) {
-                if (e.target === confirmationModal) {
-                    confirmationModal.style.display = 'none';
-                }
-            });
-        });
+            const data = await res.json();
+            if (data.success) confirmationModal.style.display = "flex";
+        };
+
+        closeModal.onclick = newMessageBtn.onclick = () => {
+            confirmationModal.style.display = "none";
+            messageForm.reset();
+            charLabel.innerText = "0 / 150";
+        };
+
+        applyLanguage();
     </script>
 </body>
+
 </html>
