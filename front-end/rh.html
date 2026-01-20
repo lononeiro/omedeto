@@ -113,21 +113,36 @@
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
             try {
+                // URL das fontes Noto Sans JP (suporta japonês)
                 const fontUrl = isBold
                     ? 'https://fonts.gstatic.com/s/notosansjp/v52/-F6pfjtzLrIxJ1gqSnj8pwg.ttf'
                     : 'https://fonts.gstatic.com/s/notosansjp/v52/-F62fjtzLrIxJ1gqSnj8pwg.ttf';
 
+                console.log(`Carregando fonte japonesa: ${isBold ? 'Bold' : 'Regular'}`);
                 const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-
-                // 🔑 IMPORTANT: subset:false enables Unicode (CJK)
                 const font = await pdfDoc.embedFont(fontBytes, {
                     subset: false
                 });
 
+                console.log(`Fonte japonesa ${isBold ? 'Bold' : 'Regular'} carregada com sucesso`);
                 return font;
             } catch (error) {
-                console.error('Erro ao carregar fonte japonesa:', error);
-                throw new Error('Falha ao carregar fonte japonesa');
+                console.error(`Erro ao carregar fonte japonesa ${isBold ? 'bold' : 'regular'}:`, error);
+                // Tentar outra fonte japonesa como fallback
+                try {
+                    const fallbackFontUrl = isBold
+                        ? 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf'
+                        : 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf';
+
+                    console.log(`Tentando fonte alternativa: ${fallbackFontUrl}`);
+                    const fontBytes = await fetch(fallbackFontUrl).then(res => res.arrayBuffer());
+                    const font = await pdfDoc.embedFont(fontBytes);
+                    console.log(`Fonte alternativa carregada com sucesso`);
+                    return font;
+                } catch (fallbackError) {
+                    console.error('Erro ao carregar fonte alternativa:', fallbackError);
+                    throw new Error('Não foi possível carregar fontes japonesas. Verifique sua conexão com a internet.');
+                }
             }
         }
 
