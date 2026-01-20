@@ -6,12 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOROZU - Visualizar Reconhecimentos (RH)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/pdf-lib@^1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+
     <link rel="stylesheet" href="styles/rh.css">
 </head>
 
@@ -114,19 +115,20 @@
 
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
-            const fontUrl = isBold
-                ? 'https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansJP-Bold.otf'
-                : 'https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansJP-Regular.otf';
+            const fontPath = isBold
+                ? '/fonts/NotoSansJP-Bold.otf'
+                : '/fonts/NotoSansJP-Regular.otf';
 
-            const fontBytes = await fetch(fontUrl).then(res => {
+            const fontBytes = await fetch(fontPath).then(res => {
                 if (!res.ok) throw new Error('Fonte japonesa não encontrada');
                 return res.arrayBuffer();
             });
 
             return await pdfDoc.embedFont(fontBytes, {
-                subset: false // 🔑 REQUIRED for CJK
+                subset: false // 🔑 REQUIRED FOR CJK
             });
         }
+
 
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
@@ -425,6 +427,7 @@
 
                 // Carregar e modificar o PDF
                 const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                pdfDoc.registerFontkit(fontkit);
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 const { width, height } = firstPage.getSize();
@@ -534,6 +537,7 @@
             console.log('Criando PDF alternativo...');
 
             const pdfDoc = await PDFLib.PDFDocument.create();
+            pdfDoc.registerFontkit(fontkit);
             const page = pdfDoc.addPage([600, 400]);
             const { width, height } = page.getSize();
 
