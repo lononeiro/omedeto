@@ -429,14 +429,14 @@
                 // });
                 // Versão com ajustes proporcionais ao tamanho do texto
                 const textSize = 18;
-                const textFont = cleanedRemetente.length > 25 ? fontBold : fontRegular;
+                const textFont = fontRegular;
                 const remetenteWidth = textFont.widthOfTextAtSize(cleanedRemetente, textSize);
 
                 // Ajuste baseado no comprimento do texto
                 let xAdjustment = 0;
                 if (cleanedRemetente.length > 25) {
                     // Textos longos: quanto maior, mais para a direita
-                    xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.5; // Progressivo
+                    xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.9; // Progressivo
                 } else {
                     // Textos curtos: quanto menor, mais para a esquerda
                     xAdjustment = -40 + (cleanedRemetente.length * 1.5); // Menos negativo para textos maiores
