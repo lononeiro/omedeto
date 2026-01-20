@@ -334,6 +334,7 @@ app.get('/', (req, res) => {
           <li><code>POST /api/messages</code> - Criar mensagem (requer autenticação)</li>
           <li><code>GET /api/stats</code> - Estatísticas (requer autenticação)</li>
           <li><code>GET /api/health</code> - Status do servidor</li>
+          <li><code>GET /api/messages/new</code> - Novas mensagens desde ID (para notificações)</li>
         </ul>
         
         <p><strong>Usuário padrão:</strong> ${process.env.ADMIN_EMAIL || 'rh.admin'}</p>
@@ -380,10 +381,6 @@ app.post('/api/messages/public', async (req, res) => {
       });
     }
 
-    // if (messageData.mensagem.length > 500) {
-    //   return res.status(400).json({ error: "Mensagem muito longa" });
-    // }
-
     const result = await messageQueries.saveMessage(messageData);
 
     if (!result.success) {
@@ -407,47 +404,6 @@ app.post('/api/messages/public', async (req, res) => {
     });
   }
 });
-
-// Inicializar servidor
-const PORT = process.env.PORT || 3001;
-
-async function startServer() {
-  try {
-    // Testar conexão com o banco
-    const dbConnected = await testConnection();
-
-    if (!dbConnected) {
-      console.error('❌ Não foi possível conectar ao banco de dados');
-      console.log('⚠️  O sistema funcionará sem banco de dados (modo fallback)');
-    }
-
-    app.listen(PORT, () => {
-      console.log(`
-  ===========================================
-  🚀 Sistema RH Backend iniciado com sucesso!
-  
-  📍 URL: http://localhost:${PORT}
-  🌐 Ambiente: ${process.env.NODE_ENV || 'development'}
-  🗄️  Banco de dados: ${dbConnected ? '✅ Conectado' : '❌ Desconectado'}
-  
-  🔐 Credenciais admin:
-  👤 Usuário: ${process.env.ADMIN_EMAIL || 'rh.admin'}
-  🔑 Senha: ${process.env.ADMIN_PASSWORD ? '***' : 'não configurada'}
-  
-  📚 Endpoints:
-  🔗 http://localhost:${PORT}/api/health
-  🔗 http://localhost:${PORT}/api/login
-  ===========================================
-      `);
-    });
-
-  } catch (error) {
-    console.error('❌ Erro ao iniciar servidor:', error);
-    process.exit(1);
-  }
-}
-
-
 
 // server.js (adicionar estas rotas)
 
@@ -507,5 +463,129 @@ app.get('/api/messages/ordered', authenticateToken, async (req, res) => {
   }
 });
 
+// ========== NOVAS ROTAS PARA NOTIFICAÇÕES ==========
+
+// Rota para obter novas mensagens desde um determinado ID
+app.get('/api/messages/new', authenticateToken, async (req, res) => {
+  try {
+    const sinceId = req.query.since_id || 0;
+    const limit = req.query.limit || 50;
+
+    const result = await messageQueries.getMessagesSinceId(sinceId, limit);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      count: result.data.length,
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar novas mensagens:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar novas mensagens'
+    });
+  }
+});
+
+// Rota para obter contagem de mensagens não impressas (para notificações)
+app.get('/api/messages/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const result = await messageQueries.getUnreadMessagesCount();
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      count: result.count
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar contagem de mensagens não lidas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar contagem de mensagens não lidas'
+    });
+  }
+});
+
+// Rota para obter última mensagem
+app.get('/api/messages/latest', authenticateToken, async (req, res) => {
+  try {
+    const result = await messageQueries.getLatestMessages();
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      count: result.data.length,
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar últimas mensagens:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar últimas mensagens'
+    });
+  }
+});
+
+// Inicializar servidor
+const PORT = process.env.PORT || 3001;
+
+async function startServer() {
+  try {
+    // Testar conexão com o banco
+    const dbConnected = await testConnection();
+
+    if (!dbConnected) {
+      console.error('❌ Não foi possível conectar ao banco de dados');
+      console.log('⚠️  O sistema funcionará sem banco de dados (modo fallback)');
+    }
+
+    app.listen(PORT, () => {
+      console.log(`
+  ===========================================
+  🚀 Sistema RH Backend iniciado com sucesso!
+  
+  📍 URL: http://localhost:${PORT}
+  🌐 Ambiente: ${process.env.NODE_ENV || 'development'}
+  🗄️  Banco de dados: ${dbConnected ? '✅ Conectado' : '❌ Desconectado'}
+  
+  🔐 Credenciais admin:
+  👤 Usuário: ${process.env.ADMIN_EMAIL || 'rh.admin'}
+  🔑 Senha: ${process.env.ADMIN_PASSWORD ? '***' : 'não configurada'}
+  
+  📚 Endpoints:
+  🔗 http://localhost:${PORT}/api/health
+  🔗 http://localhost:${PORT}/api/login
+  🔗 http://localhost:${PORT}/api/messages/new (notificações)
+  ===========================================
+      `);
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao iniciar servidor:', error);
+    process.exit(1);
+  }
+}
 
 startServer();

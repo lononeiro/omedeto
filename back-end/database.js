@@ -73,7 +73,23 @@ const messageQueries = {
       console.error('Erro ao salvar mensagem:', error.message);
       return { success: false, error: error.message };
     }
+
+
   },
+  getLatestMessage: async () => {
+    try {
+      const query = `
+        SELECT * FROM messages 
+        WHERE status = 'active'
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `;
+    } catch (error) {
+      console.error('Erro ao buscar a última mensagem:', error.message);
+      return { success: false, error: error.message };
+    }
+  },
+
 
   // Obter todas as mensagens
   getAllMessages: async () => {
@@ -207,6 +223,76 @@ const messageQueries = {
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error.message);
       return { success: false, error: error.message };
+    }
+  },
+                  // Função para obter mensagens desde um ID específico
+  getMessagesSinceId: async (sinceId, limit = 50) => {
+    try {
+      const query = `
+        SELECT id, remetente_nome, destinatario_nome, mensagem, created_at, printed_at, isprinted
+        FROM messages
+        WHERE id > $1
+        ORDER BY id DESC
+        LIMIT $2
+      `;
+      const values = [sinceId, limit];
+      const result = await pool.query(query, values);
+      return {
+        success: true,
+        data: result.rows
+      };
+    } catch (error) {
+      console.error('Erro ao buscar mensagens desde ID:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Função para obter contagem de mensagens não impressas
+  getUnreadMessagesCount: async () => {
+    try {
+      const query = `
+        SELECT COUNT(*) as count
+        FROM messages
+        WHERE isprinted = false
+      `;
+      const result = await pool.query(query);
+      return {
+        success: true,
+        count: parseInt(result.rows[0].count)
+      };
+    } catch (error) {
+      console.error('Erro ao buscar contagem de mensagens não lidas:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Função para obter as últimas mensagens
+  getLatestMessages: async (limit = 10) => {
+    try {
+      const query = `
+        SELECT id, remetente_nome, destinatario_nome, created_at, isprinted
+        FROM messages
+        ORDER BY id DESC
+        LIMIT $1
+      `;
+      const values = [limit];
+      const result = await pool.query(query, values);
+      return {
+        success: true,
+        data: result.rows
+      };
+    } catch (error) {
+      console.error('Erro ao buscar últimas mensagens:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 };

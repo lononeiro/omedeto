@@ -14,6 +14,172 @@
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 
     <link rel="stylesheet" href="styles/rh.css">
+    <style>
+        /* Estilos para notificações */
+        .new-message-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.5s ease;
+            border-left: 5px solid #ffd166;
+            max-width: 350px;
+        }
+
+        .new-message-notification.show {
+            display: flex;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .new-message-notification i {
+            font-size: 1.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .new-message-content {
+            flex: 1;
+        }
+
+        .new-message-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .new-message-sender {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .close-notification {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .close-notification:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Badge para novas mensagens */
+        .new-messages-badge {
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 8px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* Botão para carregar novas mensagens */
+        .load-new-messages-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            margin: 10px auto;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .load-new-messages-btn:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .load-new-messages-btn i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Animação para novas mensagens */
+        .message-card.new-message {
+            animation: highlightPulse 2s ease;
+            border-left: 5px solid #4CAF50 !important;
+        }
+
+        @keyframes highlightPulse {
+            0% { 
+                background-color: rgba(76, 175, 80, 0.1); 
+                transform: scale(1);
+            }
+            50% { 
+                background-color: rgba(76, 175, 80, 0.3); 
+                transform: scale(1.02);
+            }
+            100% { 
+                background-color: transparent; 
+                transform: scale(1);
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -21,6 +187,18 @@
     <button id="logoutBtn" class="logout-btn" style="display: none;">
         <i class="fas fa-sign-out-alt"></i> Sair
     </button>
+    
+    <!-- Notificação de nova mensagem -->
+    <div id="newMessageNotification" class="new-message-notification">
+        <i class="fas fa-bell"></i>
+        <div class="new-message-content">
+            <div class="new-message-title">Nova mensagem de reconhecimento!</div>
+            <div class="new-message-sender" id="notificationSender"></div>
+        </div>
+        <button class="close-notification" id="closeNotification">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
     <div class="container">
         <header class="yorozu-header">
@@ -60,6 +238,9 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Botão para carregar novas mensagens (aparece dinamicamente) -->
+            <div id="loadNewMessagesContainer" style="display: none; text-align: center; margin: 15px 0;"></div>
 
             <!-- Lista de mensagens -->
             <div class="messages-container" id="messagesContainer">
@@ -112,6 +293,12 @@
 
         // Variáveis para controle da exclusão individual
         let currentMessageIdToDelete = null;
+        
+        // Sistema de atualização em tempo real
+        let lastMessageId = 0;
+        let pollingInterval = null;
+        let newMessagesCount = 0;
+        let isPollingActive = true;
 
         // -----------------------
         // Japanese size tuning
@@ -416,16 +603,44 @@
         function formatMessageLines(message, maxCharsPerLine = 50, maxLines = 8) {
             if (!message) return [];
 
-            const words = message.split(' ');
+            // Primeiro, dividir pelas quebras de linha originais
+            const originalLines = message.split('\n');
             const lines = [];
-            let currentLine = '';
+            
+            for (const originalLine of originalLines) {
+                if (originalLine.trim() === '') {
+                    // Linha vazia (apenas quebra de linha)
+                    lines.push('');
+                    continue;
+                }
+                
+                const words = originalLine.split(' ');
+                let currentLine = '';
 
-            for (const word of words) {
-                // Se adicionar esta palavra exceder o limite da linha
-                if ((currentLine + ' ' + word).length > maxCharsPerLine) {
+                for (const word of words) {
+                    // Se adicionar esta palavra exceder o limite da linha
+                    if ((currentLine + ' ' + word).length > maxCharsPerLine && currentLine.length > 0) {
+                        // Se já atingiu o máximo de linhas, para aqui
+                        if (lines.length >= maxLines - 1) {
+                            // Adiciona "..." no final da última linha se truncou
+                            if (currentLine.length > maxCharsPerLine - 3) {
+                                currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
+                            }
+                            lines.push(currentLine);
+                            return lines;
+                        }
+                        lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = currentLine ? currentLine + ' ' + word : word;
+                    }
+                }
+
+                // Adiciona a última linha se houver conteúdo
+                if (currentLine) {
                     // Se já atingiu o máximo de linhas, para aqui
-                    if (lines.length >= maxLines - 1) {
-                        // Adiciona "..." no final da última linha se truncou
+                    if (lines.length >= maxLines) {
+                        // Adiciona "..." no final se necessário
                         if (currentLine.length > maxCharsPerLine - 3) {
                             currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
                         }
@@ -433,15 +648,12 @@
                         return lines;
                     }
                     lines.push(currentLine);
-                    currentLine = word;
-                } else {
-                    currentLine = currentLine ? currentLine + ' ' + word : word;
                 }
-            }
-
-            // Adiciona a última linha se houver conteúdo
-            if (currentLine) {
-                lines.push(currentLine);
+                
+                // Se atingiu o máximo de linhas, para
+                if (lines.length >= maxLines) {
+                    return lines;
+                }
             }
 
             // Limita ao número máximo de linhas
@@ -645,6 +857,164 @@
             }
         }
 
+        // ========== SISTEMA DE ATUALIZAÇÃO EM TEMPO REAL ==========
+        
+        // Função para carregar o último ID de mensagem
+        async function loadLastMessageId() {
+            try {
+                const messages = await getAllMessagesOrdered();
+                if (messages.length > 0) {
+                    // Ordenar por ID decrescente e pegar o maior
+                    const sortedMessages = [...messages].sort((a, b) => b.id - a.id);
+                    lastMessageId = sortedMessages[0].id;
+                    console.log(`📌 Último ID carregado: ${lastMessageId}`);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar último ID:', error);
+            }
+        }
+
+        // Função para verificar novas mensagens
+        async function checkForNewMessages() {
+            try {
+                if (!isPollingActive) return;
+                
+                console.log('🔍 Verificando novas mensagens...');
+                
+                const messages = await getAllMessagesOrdered();
+                
+                if (messages.length === 0) return;
+                
+                // Encontrar o maior ID
+                const maxId = Math.max(...messages.map(msg => msg.id));
+                
+                if (maxId > lastMessageId) {
+                    if (lastMessageId === 0) {
+                        // Primeira vez, apenas definir o último ID
+                        lastMessageId = maxId;
+                    } else {
+                        // Novas mensagens encontradas
+                        const newMessages = messages.filter(msg => msg.id > lastMessageId);
+                        lastMessageId = maxId;
+                        
+                        if (newMessages.length > 0) {
+                            console.log(`🎉 ${newMessages.length} nova(s) mensagem(ns)!`);
+                            
+                            // Atualizar contador
+                            newMessagesCount += newMessages.length;
+                            
+                            // Mostrar notificação para cada nova mensagem
+                            newMessages.forEach((msg, index) => {
+                                setTimeout(() => {
+                                    showNewMessageNotification(msg);
+                                }, index * 1000); // Espaçar as notificações
+                            });
+                            
+                            // Atualizar interface
+                            updateNewMessagesUI();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erro na verificação de novas mensagens:', error);
+            }
+        }
+
+        // Função para exibir notificação de nova mensagem
+        function showNewMessageNotification(message) {
+            const notification = document.getElementById('newMessageNotification');
+            const senderElement = document.getElementById('notificationSender');
+            
+            // Configurar conteúdo da notificação
+            senderElement.textContent = `De: ${message.remetente_nome} para ${message.destinatario_nome}`;
+            
+            // Exibir notificação
+            notification.classList.add('show');
+            
+            // Adicionar evento para fechar
+            document.getElementById('closeNotification').onclick = () => {
+                notification.classList.remove('show');
+            };
+            
+            // Fechar automaticamente após 8 segundos
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 8000);
+        }
+
+        // Função para atualizar a interface com novas mensagens
+        function updateNewMessagesUI() {
+            // Atualizar título com badge
+            const pageTitle = document.querySelector('.page-title');
+            let badge = pageTitle.querySelector('.new-messages-badge');
+            
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'new-messages-badge';
+                pageTitle.appendChild(badge);
+            }
+            badge.textContent = newMessagesCount;
+            
+            // Adicionar botão para carregar novas mensagens
+            const loadContainer = document.getElementById('loadNewMessagesContainer');
+            if (newMessagesCount > 0 && !loadContainer.querySelector('.load-new-messages-btn')) {
+                const loadButton = document.createElement('button');
+                loadButton.className = 'load-new-messages-btn';
+                loadButton.innerHTML = `
+                    <i class="fas fa-sync-alt"></i>
+                    Carregar ${newMessagesCount} nova(s) mensagem(ns)
+                `;
+                
+                loadButton.onclick = async () => {
+                    loadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                    loadButton.disabled = true;
+                    
+                    // Recarregar todas as mensagens
+                    await displayStats();
+                    await displayMessagesOrdered();
+                    
+                    // Resetar contador
+                    newMessagesCount = 0;
+                    updateNewMessagesUI();
+                    
+                    // Remover botão após 2 segundos
+                    setTimeout(() => {
+                        loadButton.remove();
+                    }, 2000);
+                };
+                
+                loadContainer.innerHTML = '';
+                loadContainer.appendChild(loadButton);
+                loadContainer.style.display = 'block';
+            }
+        }
+
+        // Função para iniciar o sistema de polling
+        function startPolling() {
+            console.log('🔄 Iniciando sistema de atualização em tempo real...');
+            isPollingActive = true;
+            
+            // Verificar novas mensagens a cada 10 segundos
+            pollingInterval = setInterval(async () => {
+                await checkForNewMessages();
+            }, 10000); // 10 segundos
+            
+            // Primeira verificação imediata
+            setTimeout(async () => {
+                await checkForNewMessages();
+            }, 1000);
+        }
+
+        // Função para parar o sistema de polling
+        function stopPolling() {
+            isPollingActive = false;
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                console.log('⏹️ Sistema de atualização parado');
+            }
+        }
+
         // ========== EXIBIR MENSAGENS ORDENADAS ==========
         async function displayMessagesOrdered() {
             const messages = await getAllMessagesOrdered();
@@ -655,7 +1025,11 @@
                     <div class="no-messages">
                         <i class="fas fa-inbox"></i>
                         <h3>Nenhuma mensagem encontrada</h3>
-                        <p>Ainda não há mensagens de reconhecimento no sistema.</p>
+                        <p>Aguardando novas mensagens de reconhecimento...</p>
+                        <div style="margin-top: 20px;">
+                            <i class="fas fa-sync-alt fa-spin" style="color: #0d2b5c;"></i>
+                            <span style="color: #666; font-size: 0.9rem;">Monitorando novas mensagens</span>
+                        </div>
                     </div>
                 `;
                 return;
@@ -713,8 +1087,11 @@
                 new Date(message.printed_at).toLocaleDateString('pt-BR') :
                 '';
 
+            // Verificar se é uma mensagem nova
+            const isNew = message.id > lastMessageId;
+
             return `
-                <div class="message-card ${isPrinted ? 'imprinted' : ''}" data-id="${message.id}">
+                <div class="message-card ${isPrinted ? 'imprinted' : ''} ${isNew ? 'new-message' : ''}" data-id="${message.id}">
                     <div class="message-header">
                         <div class="message-info">
                             <div class="message-from-to">
@@ -731,6 +1108,7 @@
                     `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
                     `<span class="status-badge pending">PENDENTE</span>`
                 }
+                                ${isNew ? '<span class="status-badge new">NOVA</span>' : ''}
                             </div>
                         </div>
                         <div class="message-status">
@@ -852,13 +1230,17 @@
         }
 
         // ========== INICIALIZAÇÃO ATUALIZADA ==========
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Carregar dados
-            displayStats();
-            displayMessagesOrdered();
+            await displayStats();
+            await displayMessagesOrdered();
+            await loadLastMessageId();
+            
+            // Iniciar sistema de atualização
+            startPolling();
 
             // Configurar botão de excluir todas
-            document.getElementById('deleteAllMessages').addEventListener('click', async function () {
+            document.getElementById('deleteAllMessages').addEventListener('click', async function() {
                 const messages = await getAllMessagesOrdered();
                 const totalMessages = messages.length;
 
@@ -873,11 +1255,11 @@
             });
 
             // Configurar modal de exclusão em lote
-            document.getElementById('cancelDeleteAll').addEventListener('click', function () {
+            document.getElementById('cancelDeleteAll').addEventListener('click', function() {
                 document.getElementById('confirmDeleteAllModal').style.display = 'none';
             });
 
-            document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
+            document.getElementById('confirmDeleteAll').addEventListener('click', async function() {
                 const success = await deleteAllMessages();
                 if (success) {
                     await displayStats();
@@ -890,11 +1272,27 @@
             setupIndividualDeleteModal();
 
             // Fechar modais ao clicar fora
-            document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
+            document.getElementById('confirmDeleteAllModal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.style.display = 'none';
                 }
             });
+
+            // Adicionar evento para parar polling quando a página não estiver visível
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    console.log('⏸️ Página em segundo plano, pausando atualizações');
+                    stopPolling();
+                } else {
+                    console.log('▶️ Página em primeiro plano, retomando atualizações');
+                    startPolling();
+                }
+            });
+
+            // Solicitar permissão para notificações
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
         });
     </script>
 </body>
