@@ -113,10 +113,63 @@
         // Variáveis para controle da exclusão individual
         let currentMessageIdToDelete = null;
 
+        // -----------------------
+        // Japanese size tuning
+        // -----------------------
+        // Adjust this scale to taste (0.7–0.9). Lower = smaller Japanese text.
+        const JAPANESE_SCALE = 0.78;
+
+        // Detect if text contains CJK (Japanese/Chinese/Kanji/Kana etc.)
+        function containsJapanese(text) {
+            if (!text) return false;
+            return /[\u3000-\u30FF\u4E00-\u9FFF\uFF00-\uFFEF]/.test(text);
+        }
+
+        // Draw centered text, automatically scaling if it's Japanese
+        async function drawCenteredText(page, text, baseY, baseSize, font, color = PDFLib.rgb(0, 0, 0)) {
+            const isJP = containsJapanese(text);
+            const size = isJP ? baseSize * JAPANESE_SCALE : baseSize;
+
+            let textWidth;
+            try {
+                textWidth = font.widthOfTextAtSize(text, size);
+            } catch (e) {
+                // fallback approximation if width measurement fails
+                textWidth = text.length * size * (isJP ? 0.5 : 0.5);
+            }
+
+            const x = (page.getWidth() / 2) - (textWidth / 2);
+            page.drawText(text, {
+                x,
+                y: baseY,
+                size,
+                font,
+                color
+            });
+        }
+
+        // Draw left-aligned text, scaling Japanese if necessary
+        async function drawLeftText(page, text, x, y, baseSize, font, color = PDFLib.rgb(0, 0, 0)) {
+            const isJP = containsJapanese(text);
+            const size = isJP ? baseSize * JAPANESE_SCALE : baseSize;
+
+            page.drawText(text, {
+                x,
+                y,
+                size,
+                font,
+                color
+            });
+        }
+
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
-            // 🔑 REQUIRED for custom fonts
-            pdfDoc.registerFontkit(fontkit);
+            // ensure fontkit is registered (harmless if already registered)
+            try {
+                pdfDoc.registerFontkit(fontkit);
+            } catch (e) {
+                // ignore if already registered
+            }
 
             const fontPath = isBold
                 ? '/fonts/NotoSansJP-Bold.otf'
@@ -133,8 +186,7 @@
             return await pdfDoc.embedFont(fontBytes, {
                 subset: false
             });
-        }   
-
+        }
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
         // Função para obter o token de autenticação
@@ -445,41 +497,9 @@
                 // Calcular posições
                 const centerX = width / 2;
 
-                // Adicionar remetente - VERIFICAÇÃO DE SUPORTE DE CARACTERES
+                // Adicionar remetente - agora using automatic JP scaling + centering helper
                 const remetenteSize = 18;
-
-                // Verificar se a fonte suporta os caracteres
-                try {
-                    const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, remetenteSize);
-
-                    // Ajuste baseado no comprimento do texto
-                    let xAdjustment = 0;
-                    if (cleanedRemetente.length > 25) {
-                        xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.9;
-                    } else {
-                        xAdjustment = -40 + (cleanedRemetente.length * 1.5);
-                    }
-
-                    console.log(`Posicionando remetente: x=${centerX - (remetenteWidth / 2) + xAdjustment}, y=150`);
-
-                    firstPage.drawText(cleanedRemetente, {
-                        x: centerX - (remetenteWidth / 2) + xAdjustment,
-                        y: 150,
-                        size: remetenteSize,
-                        font: fontRegular,
-                        color: PDFLib.rgb(0, 0, 0),
-                    });
-                } catch (error) {
-                    console.warn('Erro ao desenhar remetente, usando posição padrão:', error);
-                    // Posição padrão em caso de erro
-                    firstPage.drawText(cleanedRemetente, {
-                        x: 100,
-                        y: 150,
-                        size: remetenteSize,
-                        font: fontRegular,
-                        color: PDFLib.rgb(0, 0, 0),
-                    });
-                }
+                await drawCenteredText(firstPage, cleanedRemetente, 150, remetenteSize, fontRegular, PDFLib.rgb(0, 0, 0));
 
                 // Adicionar mensagem formatada
                 const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
@@ -490,24 +510,11 @@
                 for (let i = 0; i < messageLines.length; i++) {
                     const line = messageLines[i];
                     try {
-                        const lineWidth = fontRegular.widthOfTextAtSize(line, 16);
-                        firstPage.drawText(line, {
-                            x: centerX - (lineWidth / 2),
-                            y: yPos,
-                            size: 16,
-                            font: fontRegular,
-                            color: PDFLib.rgb(0, 0, 0),
-                        });
+                        await drawCenteredText(firstPage, line, yPos, 16, fontRegular, PDFLib.rgb(0, 0, 0));
                     } catch (error) {
                         console.warn(`Erro ao desenhar linha ${i}, usando posição padrão:`, error);
-                        // Linha centralizada manualmente
-                        firstPage.drawText(line, {
-                            x: 100,
-                            y: yPos,
-                            size: 16,
-                            font: fontRegular,
-                            color: PDFLib.rgb(0, 0, 0),
-                        });
+                        // Fallback left-aligned (also scaled for JP)
+                        await drawLeftText(firstPage, line, 100, yPos, 16, fontRegular, PDFLib.rgb(0, 0, 0));
                     }
                     yPos -= 25;
                 }
@@ -551,67 +558,31 @@
             const fontBold = await loadJapaneseFont(pdfDoc, true);
             const color = PDFLib.rgb(0.05, 0.17, 0.36);
 
-            // Título
-            page.drawText('CERTIFICADO DE RECONHECIMENTO', {
-                x: 50,
-                y: height - 60,
-                size: 24,
-                font: fontBold,
-                color: color,
-            });
+            // Título (bold)
+            await drawLeftText(page, 'CERTIFICADO DE RECONHECIMENTO', 50, height - 60, 24, fontBold, color);
 
             // Logo YOROZU
-            page.drawText('YOROZU CORPORATION', {
-                x: 50,
-                y: height - 100,
-                size: 18,
-                font: fontBold,
-                color: color,
-            });
+            await drawLeftText(page, 'YOROZU CORPORATION', 50, height - 100, 18, fontBold, color);
 
-            // Destinatário
+            // Destinatário (left, may be JP)
             const destinatarioText = `Para: ${destinatario}`;
-            page.drawText(destinatarioText, {
-                x: 50,
-                y: height - 160,
-                size: 22,
-                font: fontBold,
-                color: PDFLib.rgb(0, 0, 0),
-            });
+            await drawLeftText(page, destinatarioText, 50, height - 160, 22, fontBold, PDFLib.rgb(0, 0, 0));
 
             // Mensagem formatada
             const messageLines = formatMessageLines(mensagem, 60, 6);
             let yPos = height - 180;
             for (let i = 0; i < messageLines.length; i++) {
-                page.drawText(messageLines[i], {
-                    x: 50,
-                    y: yPos,
-                    size: 14,
-                    font: fontRegular,
-                    color: PDFLib.rgb(0, 0, 0),
-                });
+                await drawLeftText(page, messageLines[i], 50, yPos, 14, fontRegular, PDFLib.rgb(0, 0, 0));
                 yPos -= 25;
             }
 
             // Remetente
             const remetenteText = `De: ${remetente}`;
-            page.drawText(remetenteText, {
-                x: 50,
-                y: 100,
-                size: 16,
-                font: fontBold,
-                color: PDFLib.rgb(0, 0, 0),
-            });
+            await drawLeftText(page, remetenteText, 50, 100, 16, fontBold, PDFLib.rgb(0, 0, 0));
 
             // Data
             const data = new Date().toLocaleDateString('pt-BR');
-            page.drawText(`Data: ${data}`, {
-                x: 50,
-                y: 70,
-                size: 14,
-                font: fontRegular,
-                color: PDFLib.rgb(0.4, 0.4, 0.4),
-            });
+            await drawLeftText(page, `Data: ${data}`, 50, 70, 14, fontRegular, PDFLib.rgb(0.4, 0.4, 0.4));
 
             // Salvar PDF
             const pdfBytes = await pdfDoc.save();
