@@ -6,10 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOROZU - Visualizar Reconhecimentos (RH)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/pdf-lib@^1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <link rel="stylesheet" href="styles/rh.css">
 </head>
 
@@ -112,39 +114,20 @@
 
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
-            try {
-                // URL das fontes Noto Sans JP (suporta japonês)
-                const fontUrl = isBold
-                    ? 'https://fonts.gstatic.com/s/notosansjp/v52/-F6pfjtzLrIxJ1gqSnj8pwg.ttf'
-                    : 'https://fonts.gstatic.com/s/notosansjp/v52/-F62fjtzLrIxJ1gqSnj8pwg.ttf';
+            const fontUrl = isBold
+                ? 'https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansJP-Bold.otf'
+                : 'https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansJP-Regular.otf';
 
-                console.log(`Carregando fonte japonesa: ${isBold ? 'Bold' : 'Regular'}`);
-                const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-                const font = await pdfDoc.embedFont(fontBytes, {
-                    subset: false
-                });
+            const fontBytes = await fetch(fontUrl).then(res => {
+                if (!res.ok) throw new Error('Fonte japonesa não encontrada');
+                return res.arrayBuffer();
+            });
 
-                console.log(`Fonte japonesa ${isBold ? 'Bold' : 'Regular'} carregada com sucesso`);
-                return font;
-            } catch (error) {
-                console.error(`Erro ao carregar fonte japonesa ${isBold ? 'bold' : 'regular'}:`, error);
-                // Tentar outra fonte japonesa como fallback
-                try {
-                    const fallbackFontUrl = isBold
-                        ? 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf'
-                        : 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf';
-
-                    console.log(`Tentando fonte alternativa: ${fallbackFontUrl}`);
-                    const fontBytes = await fetch(fallbackFontUrl).then(res => res.arrayBuffer());
-                    const font = await pdfDoc.embedFont(fontBytes);
-                    console.log(`Fonte alternativa carregada com sucesso`);
-                    return font;
-                } catch (fallbackError) {
-                    console.error('Erro ao carregar fonte alternativa:', fallbackError);
-                    throw new Error('Não foi possível carregar fontes japonesas. Verifique sua conexão com a internet.');
-                }
-            }
+            return await pdfDoc.embedFont(fontBytes, {
+                subset: false // 🔑 REQUIRED for CJK
+            });
         }
+
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
         // Função para obter o token de autenticação
