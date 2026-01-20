@@ -113,33 +113,21 @@
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
             try {
-                // URL das fontes Noto Sans JP (suporta japonês)
                 const fontUrl = isBold
                     ? 'https://fonts.gstatic.com/s/notosansjp/v52/-F6pfjtzLrIxJ1gqSnj8pwg.ttf'
                     : 'https://fonts.gstatic.com/s/notosansjp/v52/-F62fjtzLrIxJ1gqSnj8pwg.ttf';
-                
-                console.log(`Carregando fonte japonesa: ${isBold ? 'Bold' : 'Regular'}`);
+
                 const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-                const font = await pdfDoc.embedFont(fontBytes);
-                console.log(`Fonte japonesa ${isBold ? 'Bold' : 'Regular'} carregada com sucesso`);
+
+                // 🔑 IMPORTANT: subset:false enables Unicode (CJK)
+                const font = await pdfDoc.embedFont(fontBytes, {
+                    subset: false
+                });
+
                 return font;
             } catch (error) {
-                console.error(`Erro ao carregar fonte japonesa ${isBold ? 'bold' : 'regular'}:`, error);
-                // Tentar outra fonte japonesa como fallback
-                try {
-                    const fallbackFontUrl = isBold
-                        ? 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf'
-                        : 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf';
-                    
-                    console.log(`Tentando fonte alternativa: ${fallbackFontUrl}`);
-                    const fontBytes = await fetch(fallbackFontUrl).then(res => res.arrayBuffer());
-                    const font = await pdfDoc.embedFont(fontBytes);
-                    console.log(`Fonte alternativa carregada com sucesso`);
-                    return font;
-                } catch (fallbackError) {
-                    console.error('Erro ao carregar fonte alternativa:', fallbackError);
-                    throw new Error('Não foi possível carregar fontes japonesas. Verifique sua conexão com a internet.');
-                }
+                console.error('Erro ao carregar fonte japonesa:', error);
+                throw new Error('Falha ao carregar fonte japonesa');
             }
         }
 
@@ -370,7 +358,7 @@
         // ========== FUNÇÃO PARA FORMATAR MENSAGEM EM LINHAS ==========
         function formatMessageLines(message, maxCharsPerLine = 50, maxLines = 8) {
             if (!message) return [];
-            
+
             const words = message.split(' ');
             const lines = [];
             let currentLine = '';
@@ -453,11 +441,11 @@
 
                 // Adicionar remetente - VERIFICAÇÃO DE SUPORTE DE CARACTERES
                 const remetenteSize = 18;
-                
+
                 // Verificar se a fonte suporta os caracteres
                 try {
                     const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, remetenteSize);
-                    
+
                     // Ajuste baseado no comprimento do texto
                     let xAdjustment = 0;
                     if (cleanedRemetente.length > 25) {
@@ -546,7 +534,7 @@
         // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO ==========
         async function criarPDFAlternativo(remetente, destinatario, mensagem) {
             console.log('Criando PDF alternativo...');
-            
+
             const pdfDoc = await PDFLib.PDFDocument.create();
             const page = pdfDoc.addPage([600, 400]);
             const { width, height } = page.getSize();
@@ -628,7 +616,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             console.log('PDF alternativo criado com sucesso!');
         }
 
@@ -762,18 +750,18 @@
                             <div class="message-date">
                                 <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
                                 ${isPrinted && printedDate ?
-                                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
-                                    `<span class="status-badge pending">PENDENTE</span>`
-                                }
+                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
+                    `<span class="status-badge pending">PENDENTE</span>`
+                }
                             </div>
                         </div>
                         <div class="message-status">
                             ${!isPrinted ?
-                                `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
+                    `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
                                     <i class="fas fa-check-circle"></i> Marcar como Impresso
                                 </button>` :
-                                ''
-                            }
+                    ''
+                }
                         </div>
                     </div>
                     <div class="message-content">
@@ -932,4 +920,5 @@
         });
     </script>
 </body>
+
 </html>
