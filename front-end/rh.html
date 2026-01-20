@@ -415,14 +415,28 @@
                 const centerX = width / 2;
 
                 // Adicionar remetente
+                // if (cleanedRemetente.length > 50) {
+                // }
+                
                 const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, 18);
                 firstPage.drawText(cleanedRemetente, {
                     x: centerX - (remetenteWidth / 2) + 35,
-                    y: 145,
+                    y: 150,
                     size: 18,
                     font: fontRegular,
                     color: PDFLib.rgb(0, 0, 0),
                 });
+                // if( cleanedRemetente.length <= 50) {
+                //     const remetenteWidth = fontBold.widthOfTextAtSize(cleanedRemetente, 18);
+                //     firstPage.drawText(cleanedRemetente, {
+                //         x: centerX - (remetenteWidth / 2) -90,
+                //         y: 150,
+                //         size: 18,
+                //         font: fontBold,
+                //         color: PDFLib.rgb(0, 0, 0),
+                //     });
+                // }
+
 
                 // Adicionar mensagem formatada
                 const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
