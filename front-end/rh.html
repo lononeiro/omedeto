@@ -11,7 +11,6 @@
         rel="stylesheet">
     <script src="https://unpkg.com/pdf-lib@^1.17.1/dist/pdf-lib.min.js"></script>
     <link rel="stylesheet" href="styles/rh.css">
-
 </head>
 
 <body>
@@ -110,6 +109,35 @@
 
         // Variáveis para controle da exclusão individual
         let currentMessageIdToDelete = null;
+
+        // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
+        async function loadJapaneseFont(pdfDoc, isBold = false) {
+            try {
+                // URL das fontes Noto Sans JP (suporta japonês)
+                const fontUrl = isBold
+                    ? 'https://fonts.gstatic.com/s/notosansjp/v52/-F6pfjtzLrIxJ1gqSnj8pwg.ttf'
+                    : 'https://fonts.gstatic.com/s/notosansjp/v52/-F62fjtzLrIxJ1gqSnj8pwg.ttf';
+                
+                console.log(`Carregando fonte japonesa: ${isBold ? 'Bold' : 'Regular'}`);
+                const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
+                const font = await pdfDoc.embedFont(fontBytes);
+                console.log(`Fonte japonesa ${isBold ? 'Bold' : 'Regular'} carregada com sucesso`);
+                return font;
+            } catch (error) {
+                console.error(`Erro ao carregar fonte japonesa ${isBold ? 'bold' : 'regular'}:`, error);
+                // Fallback para fontes padrão
+                try {
+                    if (isBold) {
+                        return await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                    } else {
+                        return await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                    }
+                } catch (fallbackError) {
+                    console.error('Erro no fallback de fonte:', fallbackError);
+                    throw new Error('Não foi possível carregar fontes para o PDF');
+                }
+            }
+        }
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
         // Função para obter o token de autenticação
@@ -331,11 +359,11 @@
         function cleanTextForPDF(text) {
             if (!text) return '';
 
-            // Remover caracteres problemáticos para WinAnsi
+            // Manter caracteres japoneses e outros caracteres especiais
+            // Apenas remover quebras de linha e caracteres problemáticos
             const cleaned = text
                 .replace(/\r?\n|\r/g, ' ')  // Substituir quebras de linha por espaço
-                .replace(/[^\x00-\x7F]/g, '') // Remover caracteres não-ASCII
-                .replace(/[^\x20-\x7E]/g, '') // Remover outros caracteres não imprimíveis
+                .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remover caracteres de controle
                 .trim();
 
             return cleaned;
@@ -343,6 +371,8 @@
 
         // ========== FUNÇÃO PARA FORMATAR MENSAGEM EM LINHAS ==========
         function formatMessageLines(message, maxCharsPerLine = 50, maxLines = 8) {
+            if (!message) return [];
+            
             const words = message.split(' ');
             const lines = [];
             let currentLine = '';
@@ -353,7 +383,9 @@
                     // Se já atingiu o máximo de linhas, para aqui
                     if (lines.length >= maxLines - 1) {
                         // Adiciona "..." no final da última linha se truncou
-                        currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
+                        if (currentLine.length > maxCharsPerLine - 3) {
+                            currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
+                        }
                         lines.push(currentLine);
                         return lines;
                     }
@@ -373,16 +405,23 @@
             return lines.slice(0, maxLines);
         }
 
-        // ========== FUNÇÃO ATUALIZADA PARA GERAR CERTIFICADO PDF ==========
+        // ========== FUNÇÃO ATUALIZADA PARA GERAR CERTIFICADO PDF (COM SUPORTE A JAPONÊS) ==========
         async function gerarCertificadoPDF(remetente, destinatario, mensagem) {
             const loader = document.getElementById('pdfLoader');
             try {
                 loader.style.display = 'flex';
 
-                // Limpar os textos
+                console.log('Gerando certificado PDF...');
+                console.log('Remetente:', remetente);
+                console.log('Destinatário:', destinatario);
+                console.log('Mensagem:', mensagem);
+
+                // Limpar os textos (mantendo caracteres japoneses)
                 const cleanedRemetente = cleanTextForPDF(remetente);
                 const cleanedDestinatario = cleanTextForPDF(destinatario);
                 const cleanedMensagem = cleanTextForPDF(mensagem);
+
+                console.log('Textos limpos:', { cleanedRemetente, cleanedDestinatario, cleanedMensagem });
 
                 // Validar comprimento máximo
                 if (cleanedMensagem.length > 400) {
@@ -399,6 +438,7 @@
                     pdfBytes = await response.arrayBuffer();
                 } catch {
                     // Se não encontrar, criar PDF alternativo
+                    console.log('Template não encontrado, criando PDF alternativo');
                     return criarPDFAlternativo(cleanedRemetente, cleanedDestinatario, cleanedMensagem);
                 }
 
@@ -408,52 +448,44 @@
                 const firstPage = pages[0];
                 const { width, height } = firstPage.getSize();
 
-                // Configurar fontes
-                const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                const fontRegular = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                // Carregar fontes japonesas
+                console.log('Carregando fontes japonesas...');
+                const fontBold = await loadJapaneseFont(pdfDoc, true);
+                const fontRegular = await loadJapaneseFont(pdfDoc, false);
+                console.log('Fontes carregadas com sucesso');
 
                 // Calcular posições (ajuste conforme necessário)
                 const centerX = width / 2;
 
-                // Adicionar remetente
-                // if (cleanedRemetente.length > 50) {
-                // }
-
-                // const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, 18);
-                // firstPage.drawText(cleanedRemetente, {
-                //     x: centerX - (remetenteWidth / 2) + 35,
-                //     y: 150,
-                //     size: 18,
-                //     font: fontRegular,
-                //     color: PDFLib.rgb(0, 0, 0),
-                // });
-                // Versão com ajustes proporcionais ao tamanho do texto
-                const textSize = 18;
-                const textFont = fontRegular;
-                const remetenteWidth = textFont.widthOfTextAtSize(cleanedRemetente, textSize);
-
+                // Adicionar remetente com ajuste de posição baseado no tamanho
+                const remetenteSize = 18;
+                const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, remetenteSize);
+                
                 // Ajuste baseado no comprimento do texto
                 let xAdjustment = 0;
                 if (cleanedRemetente.length > 25) {
                     // Textos longos: quanto maior, mais para a direita
-                    xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.9; // Progressivo
+                    xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.9;
                 } else {
                     // Textos curtos: quanto menor, mais para a esquerda
-                    xAdjustment = -40 + (cleanedRemetente.length * 1.5); // Menos negativo para textos maiores
+                    xAdjustment = -40 + (cleanedRemetente.length * 1.5);
                 }
+
+                console.log(`Posicionando remetente: x=${centerX - (remetenteWidth / 2) + xAdjustment}, y=150`);
 
                 firstPage.drawText(cleanedRemetente, {
                     x: centerX - (remetenteWidth / 2) + xAdjustment,
                     y: 150,
-                    size: textSize,
-                    font: textFont,
+                    size: remetenteSize,
+                    font: fontRegular,
                     color: PDFLib.rgb(0, 0, 0),
                 });
-
 
                 // Adicionar mensagem formatada
                 const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
                 let yPos = height - 200;
+
+                console.log(`Mensagem dividida em ${messageLines.length} linhas:`, messageLines);
 
                 for (let i = 0; i < messageLines.length; i++) {
                     const line = messageLines[i];
@@ -469,34 +501,39 @@
                 }
 
                 // Salvar PDF
+                console.log('Salvando PDF...');
                 const modifiedPdfBytes = await pdfDoc.save();
 
                 // Criar download
                 const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `Certificado_YOROZU_${cleanedDestinatario.replace(/\s+/g, '_')}.pdf`;
+                link.download = `Certificado_YOROZU_${cleanedDestinatario.replace(/[^\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_')}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
 
+                console.log('Certificado gerado com sucesso!');
+
             } catch (error) {
                 console.error('Erro ao gerar PDF:', error);
-                alert('Erro ao gerar certificado. Por favor, use uma mensagem mais curta e sem caracteres especiais.');
+                alert('Erro ao gerar certificado: ' + error.message);
             } finally {
                 loader.style.display = 'none';
             }
         }
 
-        // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO ==========
+        // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO (COM SUPORTE A JAPONÊS) ==========
         async function criarPDFAlternativo(remetente, destinatario, mensagem) {
+            console.log('Criando PDF alternativo com suporte a japonês...');
+            
             const pdfDoc = await PDFLib.PDFDocument.create();
             const page = pdfDoc.addPage([600, 400]);
             const { width, height } = page.getSize();
 
-            // Configurações
-            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-            const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            // Carregar fontes japonesas
+            const fontBold = await loadJapaneseFont(pdfDoc, true);
+            const fontRegular = await loadJapaneseFont(pdfDoc, false);
             const color = PDFLib.rgb(0.05, 0.17, 0.36);
 
             // Título
@@ -504,7 +541,7 @@
                 x: 50,
                 y: height - 60,
                 size: 24,
-                font: font,
+                font: fontBold,
                 color: color,
             });
 
@@ -513,16 +550,18 @@
                 x: 50,
                 y: height - 100,
                 size: 18,
-                font: font,
+                font: fontBold,
                 color: color,
             });
 
             // Destinatário
-            page.drawText(`Para: ${destinatario}`, {
+            const destinatarioText = `Para: ${destinatario}`;
+            page.drawText(destinatarioText, {
                 x: 50,
                 y: height - 160,
                 size: 22,
-                font: font,
+                font: fontBold,
+                color: PDFLib.rgb(0, 0, 0),
             });
 
             // Mensagem formatada
@@ -533,17 +572,20 @@
                     x: 50,
                     y: yPos,
                     size: 14,
-                    font: regularFont,
+                    font: fontRegular,
+                    color: PDFLib.rgb(0, 0, 0),
                 });
                 yPos -= 25;
             }
 
             // Remetente
-            page.drawText({ remetente }, {
+            const remetenteText = `De: ${remetente}`;
+            page.drawText(remetenteText, {
                 x: 50,
                 y: 100,
                 size: 16,
-                font: font,
+                font: fontBold,
+                color: PDFLib.rgb(0, 0, 0),
             });
 
             // Data
@@ -552,7 +594,8 @@
                 x: 50,
                 y: 70,
                 size: 14,
-                font: regularFont,
+                font: fontRegular,
+                color: PDFLib.rgb(0.4, 0.4, 0.4),
             });
 
             // Salvar PDF
@@ -560,10 +603,12 @@
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `Certificado_YOROZU_${destinatario.replace(/\s+/g, '_')}.pdf`;
+            link.download = `Certificado_YOROZU_${destinatario.replace(/[^\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_')}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            
+            console.log('PDF alternativo criado com sucesso!');
         }
 
         // ========== FUNÇÕES PARA MARCAÇÃO DE IMPRESSÃO ==========
@@ -620,12 +665,12 @@
 
             if (messages.length === 0) {
                 container.innerHTML = `
-            <div class="no-messages">
-                <i class="fas fa-inbox"></i>
-                <h3>Nenhuma mensagem encontrada</h3>
-                <p>Ainda não há mensagens de reconhecimento no sistema.</p>
-            </div>
-        `;
+                    <div class="no-messages">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Nenhuma mensagem encontrada</h3>
+                        <p>Ainda não há mensagens de reconhecimento no sistema.</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -682,50 +727,50 @@
                 '';
 
             return `
-        <div class="message-card ${isPrinted ? 'imprinted' : ''}" data-id="${message.id}">
-            <div class="message-header">
-                <div class="message-info">
-                    <div class="message-from-to">
-                        <div class="message-from">
-                            <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
+                <div class="message-card ${isPrinted ? 'imprinted' : ''}" data-id="${message.id}">
+                    <div class="message-header">
+                        <div class="message-info">
+                            <div class="message-from-to">
+                                <div class="message-from">
+                                    <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
+                                </div>
+                                <div class="message-to">
+                                    <strong><i class="fas fa-user-friends"></i> Para:</strong> ${message.destinatario_nome}
+                                </div>
+                            </div>
+                            <div class="message-date">
+                                <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
+                                ${isPrinted && printedDate ?
+                                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
+                                    `<span class="status-badge pending">PENDENTE</span>`
+                                }
+                            </div>
                         </div>
-                        <div class="message-to">
-                            <strong><i class="fas fa-user-friends"></i> Para:</strong> ${message.destinatario_nome}
+                        <div class="message-status">
+                            ${!isPrinted ?
+                                `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
+                                    <i class="fas fa-check-circle"></i> Marcar como Impresso
+                                </button>` :
+                                ''
+                            }
                         </div>
                     </div>
-                    <div class="message-date">
-                        <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
-                        ${isPrinted && printedDate ?
-                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
-                    `<span class="status-badge pending">PENDENTE</span>`
-                }
+                    <div class="message-content">
+                        ${mensagemPreview}
+                    </div>
+                    <div class="message-actions">
+                        <button class="btn btn-certificate generate-pdf-btn"
+                                data-remetente="${remetenteBase64}"
+                                data-destinatario="${destinatarioBase64}"
+                                data-mensagem="${mensagemBase64}">
+                            <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
+                        </button>
+                        <button class="btn btn-delete delete-message-btn" data-id="${message.id}">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
                     </div>
                 </div>
-                <div class="message-status">
-                    ${!isPrinted ?
-                    `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
-                            <i class="fas fa-check-circle"></i> Marcar como Impresso
-                        </button>` :
-                    ''
-                }
-                </div>
-            </div>
-            <div class="message-content">
-                ${mensagemPreview}
-            </div>
-            <div class="message-actions">
-                <button class="btn btn-certificate generate-pdf-btn"
-                        data-remetente="${remetenteBase64}"
-                        data-destinatario="${destinatarioBase64}"
-                        data-mensagem="${mensagemBase64}">
-                    <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
-                </button>
-                <button class="btn btn-delete delete-message-btn" data-id="${message.id}">
-                    <i class="fas fa-trash"></i> Excluir
-                </button>
-            </div>
-        </div>
-    `;
+            `;
         }
 
         // ========== ADICIONAR EVENT LISTENERS ==========
@@ -866,5 +911,4 @@
         });
     </script>
 </body>
-
 </html>
