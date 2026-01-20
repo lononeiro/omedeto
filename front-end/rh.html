@@ -125,16 +125,20 @@
                 return font;
             } catch (error) {
                 console.error(`Erro ao carregar fonte japonesa ${isBold ? 'bold' : 'regular'}:`, error);
-                // Fallback para fontes padrão
+                // Tentar outra fonte japonesa como fallback
                 try {
-                    if (isBold) {
-                        return await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                    } else {
-                        return await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-                    }
+                    const fallbackFontUrl = isBold
+                        ? 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf'
+                        : 'https://fonts.gstatic.com/s/mplus1p/v28/e3tjeuShHdiFyPFzBRro.ttf';
+                    
+                    console.log(`Tentando fonte alternativa: ${fallbackFontUrl}`);
+                    const fontBytes = await fetch(fallbackFontUrl).then(res => res.arrayBuffer());
+                    const font = await pdfDoc.embedFont(fontBytes);
+                    console.log(`Fonte alternativa carregada com sucesso`);
+                    return font;
                 } catch (fallbackError) {
-                    console.error('Erro no fallback de fonte:', fallbackError);
-                    throw new Error('Não foi possível carregar fontes para o PDF');
+                    console.error('Erro ao carregar fonte alternativa:', fallbackError);
+                    throw new Error('Não foi possível carregar fontes japonesas. Verifique sua conexão com a internet.');
                 }
             }
         }
@@ -358,15 +362,9 @@
         // ========== FUNÇÃO PARA LIMPAR TEXTO PARA PDF ==========
         function cleanTextForPDF(text) {
             if (!text) return '';
-
-            // Manter caracteres japoneses e outros caracteres especiais
-            // Apenas remover quebras de linha e caracteres problemáticos
-            const cleaned = text
+            return text
                 .replace(/\r?\n|\r/g, ' ')  // Substituir quebras de linha por espaço
-                .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remover caracteres de controle
                 .trim();
-
-            return cleaned;
         }
 
         // ========== FUNÇÃO PARA FORMATAR MENSAGEM EM LINHAS ==========
@@ -405,7 +403,7 @@
             return lines.slice(0, maxLines);
         }
 
-        // ========== FUNÇÃO ATUALIZADA PARA GERAR CERTIFICADO PDF (COM SUPORTE A JAPONÊS) ==========
+        // ========== FUNÇÃO CORRIGIDA PARA GERAR CERTIFICADO PDF ==========
         async function gerarCertificadoPDF(remetente, destinatario, mensagem) {
             const loader = document.getElementById('pdfLoader');
             try {
@@ -414,14 +412,11 @@
                 console.log('Gerando certificado PDF...');
                 console.log('Remetente:', remetente);
                 console.log('Destinatário:', destinatario);
-                console.log('Mensagem:', mensagem);
 
-                // Limpar os textos (mantendo caracteres japoneses)
+                // Limpar os textos
                 const cleanedRemetente = cleanTextForPDF(remetente);
                 const cleanedDestinatario = cleanTextForPDF(destinatario);
                 const cleanedMensagem = cleanTextForPDF(mensagem);
-
-                console.log('Textos limpos:', { cleanedRemetente, cleanedDestinatario, cleanedMensagem });
 
                 // Validar comprimento máximo
                 if (cleanedMensagem.length > 400) {
@@ -450,53 +445,76 @@
 
                 // Carregar fontes japonesas
                 console.log('Carregando fontes japonesas...');
-                const fontBold = await loadJapaneseFont(pdfDoc, true);
                 const fontRegular = await loadJapaneseFont(pdfDoc, false);
                 console.log('Fontes carregadas com sucesso');
 
-                // Calcular posições (ajuste conforme necessário)
+                // Calcular posições
                 const centerX = width / 2;
 
-                // Adicionar remetente com ajuste de posição baseado no tamanho
+                // Adicionar remetente - VERIFICAÇÃO DE SUPORTE DE CARACTERES
                 const remetenteSize = 18;
-                const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, remetenteSize);
                 
-                // Ajuste baseado no comprimento do texto
-                let xAdjustment = 0;
-                if (cleanedRemetente.length > 25) {
-                    // Textos longos: quanto maior, mais para a direita
-                    xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.9;
-                } else {
-                    // Textos curtos: quanto menor, mais para a esquerda
-                    xAdjustment = -40 + (cleanedRemetente.length * 1.5);
+                // Verificar se a fonte suporta os caracteres
+                try {
+                    const remetenteWidth = fontRegular.widthOfTextAtSize(cleanedRemetente, remetenteSize);
+                    
+                    // Ajuste baseado no comprimento do texto
+                    let xAdjustment = 0;
+                    if (cleanedRemetente.length > 25) {
+                        xAdjustment = 20 + (cleanedRemetente.length - 25) * 0.9;
+                    } else {
+                        xAdjustment = -40 + (cleanedRemetente.length * 1.5);
+                    }
+
+                    console.log(`Posicionando remetente: x=${centerX - (remetenteWidth / 2) + xAdjustment}, y=150`);
+
+                    firstPage.drawText(cleanedRemetente, {
+                        x: centerX - (remetenteWidth / 2) + xAdjustment,
+                        y: 150,
+                        size: remetenteSize,
+                        font: fontRegular,
+                        color: PDFLib.rgb(0, 0, 0),
+                    });
+                } catch (error) {
+                    console.warn('Erro ao desenhar remetente, usando posição padrão:', error);
+                    // Posição padrão em caso de erro
+                    firstPage.drawText(cleanedRemetente, {
+                        x: 100,
+                        y: 150,
+                        size: remetenteSize,
+                        font: fontRegular,
+                        color: PDFLib.rgb(0, 0, 0),
+                    });
                 }
-
-                console.log(`Posicionando remetente: x=${centerX - (remetenteWidth / 2) + xAdjustment}, y=150`);
-
-                firstPage.drawText(cleanedRemetente, {
-                    x: centerX - (remetenteWidth / 2) + xAdjustment,
-                    y: 150,
-                    size: remetenteSize,
-                    font: fontRegular,
-                    color: PDFLib.rgb(0, 0, 0),
-                });
 
                 // Adicionar mensagem formatada
                 const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
                 let yPos = height - 200;
 
-                console.log(`Mensagem dividida em ${messageLines.length} linhas:`, messageLines);
+                console.log(`Mensagem dividida em ${messageLines.length} linhas`);
 
                 for (let i = 0; i < messageLines.length; i++) {
                     const line = messageLines[i];
-                    const lineWidth = fontRegular.widthOfTextAtSize(line, 16);
-                    firstPage.drawText(line, {
-                        x: centerX - (lineWidth / 2),
-                        y: yPos,
-                        size: 16,
-                        font: fontRegular,
-                        color: PDFLib.rgb(0, 0, 0),
-                    });
+                    try {
+                        const lineWidth = fontRegular.widthOfTextAtSize(line, 16);
+                        firstPage.drawText(line, {
+                            x: centerX - (lineWidth / 2),
+                            y: yPos,
+                            size: 16,
+                            font: fontRegular,
+                            color: PDFLib.rgb(0, 0, 0),
+                        });
+                    } catch (error) {
+                        console.warn(`Erro ao desenhar linha ${i}, usando posição padrão:`, error);
+                        // Linha centralizada manualmente
+                        firstPage.drawText(line, {
+                            x: 100,
+                            y: yPos,
+                            size: 16,
+                            font: fontRegular,
+                            color: PDFLib.rgb(0, 0, 0),
+                        });
+                    }
                     yPos -= 25;
                 }
 
@@ -508,7 +526,9 @@
                 const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `Certificado_YOROZU_${cleanedDestinatario.replace(/[^\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_')}.pdf`;
+                // Nome do arquivo sem caracteres especiais
+                const fileName = `Certificado_YOROZU_${Date.now()}.pdf`;
+                link.download = fileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -523,17 +543,17 @@
             }
         }
 
-        // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO (COM SUPORTE A JAPONÊS) ==========
+        // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO ==========
         async function criarPDFAlternativo(remetente, destinatario, mensagem) {
-            console.log('Criando PDF alternativo com suporte a japonês...');
+            console.log('Criando PDF alternativo...');
             
             const pdfDoc = await PDFLib.PDFDocument.create();
             const page = pdfDoc.addPage([600, 400]);
             const { width, height } = page.getSize();
 
             // Carregar fontes japonesas
-            const fontBold = await loadJapaneseFont(pdfDoc, true);
             const fontRegular = await loadJapaneseFont(pdfDoc, false);
+            const fontBold = await loadJapaneseFont(pdfDoc, true);
             const color = PDFLib.rgb(0.05, 0.17, 0.36);
 
             // Título
@@ -603,7 +623,8 @@
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `Certificado_YOROZU_${destinatario.replace(/[^\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_')}.pdf`;
+            const fileName = `Certificado_YOROZU_${Date.now()}.pdf`;
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
