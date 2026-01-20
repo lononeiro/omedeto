@@ -115,20 +115,25 @@
 
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
+            // 🔑 REQUIRED for custom fonts
+            pdfDoc.registerFontkit(fontkit);
+
             const fontPath = isBold
                 ? '/fonts/NotoSansJP-Bold.otf'
                 : '/fonts/NotoSansJP-Regular.otf';
 
-            const fontBytes = await fetch(fontPath).then(res => {
-                if (!res.ok) throw new Error('Fonte japonesa não encontrada');
-                return res.arrayBuffer();
-            });
+            const response = await fetch(fontPath);
+
+            if (!response.ok) {
+                throw new Error(`Fonte japonesa não encontrada: ${fontPath}`);
+            }
+
+            const fontBytes = await response.arrayBuffer();
 
             return await pdfDoc.embedFont(fontBytes, {
-                subset: false // 🔑 REQUIRED FOR CJK
+                subset: false
             });
-        }
-
+        }   
 
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
