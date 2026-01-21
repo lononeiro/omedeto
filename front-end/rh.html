@@ -1198,11 +1198,15 @@
         async function displayStats() {
             const stats = await getStats();
             const statsContainer = document.getElementById('statsContainer');
-
+            const notPrintedCount = stats.total - (stats.printed || 0);
             statsContainer.innerHTML = `
                 <div class="stat-card">
                     <div class="stat-value">${stats.total}</div>
                     <div class="stat-label">Total de Mensagens</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${notPrintedCount}</div>
+                    <div class="stat-label">Mensagens Não Impressas</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value">${stats.printed}</div>
