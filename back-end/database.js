@@ -76,6 +76,33 @@ const messageQueries = {
 
 
   },
+
+  updateMessage: async (id, messageData) => {
+    try {
+      const query = `
+        UPDATE messages
+        SET remetente_nome = $1,
+            destinatario_nome = $2,
+            mensagem = $3
+        WHERE id = $4
+        RETURNING *;
+      `;
+
+      const values = [
+        messageData.remetente_nome,
+        messageData.destinatario_nome,
+        messageData.mensagem,
+        id
+      ];
+
+      const result = await pool.query(query, values);
+      return { success: true, data: result.rows[0] };
+    } catch (error) {
+      console.error('Erro ao atualizar mensagem:', error.message);
+      return { success: false, error: error.message };
+    }
+  },
+
   getLatestMessage: async () => {
     try {
       const query = `

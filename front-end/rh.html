@@ -24,7 +24,7 @@
             color: white;
             padding: 15px 20px;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             display: none;
             align-items: center;
@@ -43,6 +43,7 @@
                 transform: translateX(100%);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -55,9 +56,17 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .new-message-content {
@@ -92,7 +101,7 @@
         }
 
         .close-notification:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* Badge para novas mensagens */
@@ -112,8 +121,15 @@
         }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-3px);
+            }
         }
 
         /* Botão para carregar novas mensagens */
@@ -138,6 +154,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -147,7 +164,7 @@
         .load-new-messages-btn:hover {
             background: linear-gradient(135deg, #45a049, #3d8b40);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .load-new-messages-btn i {
@@ -155,8 +172,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Animação para novas mensagens */
@@ -166,16 +188,18 @@
         }
 
         @keyframes highlightPulse {
-            0% { 
-                background-color: rgba(76, 175, 80, 0.1); 
+            0% {
+                background-color: rgba(76, 175, 80, 0.1);
                 transform: scale(1);
             }
-            50% { 
-                background-color: rgba(76, 175, 80, 0.3); 
+
+            50% {
+                background-color: rgba(76, 175, 80, 0.3);
                 transform: scale(1.02);
             }
-            100% { 
-                background-color: transparent; 
+
+            100% {
+                background-color: transparent;
                 transform: scale(1);
             }
         }
@@ -187,7 +211,7 @@
     <button id="logoutBtn" class="logout-btn" style="display: none;">
         <i class="fas fa-sign-out-alt"></i> Sair
     </button>
-    
+
     <!-- Notificação de nova mensagem -->
     <div id="newMessageNotification" class="new-message-notification">
         <i class="fas fa-bell"></i>
@@ -274,6 +298,59 @@
             </div>
         </div>
 
+        <!-- Modal de Edição de Mensagem -->
+        <div id="editMessageModal" class="modal">
+            <div class="modal-content" style="max-width: 500px;">
+                <h2 class="modal-title"><i class="fas fa-edit" style="color: #4CAF50;"></i> Editar Mensagem</h2>
+
+                <form id="editMessageForm">
+                    <div class="form-group">
+                        <label for="editRemetente"><i class="fas fa-user"></i> Remetente:</label>
+                        <input type="text" id="editRemetente" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDestinatario"><i class="fas fa-user-friends"></i> Destinatário:</label>
+                        <input type="text" id="editDestinatario" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editMensagem"><i class="fas fa-comment"></i> Mensagem:</label>
+                        <textarea id="editMensagem" class="form-textarea" rows="6" required></textarea>
+                        <div class="char-counter">
+                            <span id="editCharCount">0</span>/400 caracteres
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancelEdit" class="btn">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmação de Edição -->
+        <div id="confirmEditModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <h2 class="modal-title"><i class="fas fa-check-circle" style="color: #4CAF50;"></i> Confirmar Edição
+                </h2>
+                <p id="confirmEditText" style="margin-bottom: 25px;"></p>
+                <div class="modal-actions">
+                    <button id="cancelConfirmEdit" class="btn">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button id="confirmEdit" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Loader -->
         <div id="pdfLoader" class="loader">
             <div class="loader-spinner"></div>
@@ -293,7 +370,7 @@
 
         // Variáveis para controle da exclusão individual
         let currentMessageIdToDelete = null;
-        
+
         // Sistema de atualização em tempo real
         let lastMessageId = 0;
         let pollingInterval = null;
@@ -606,14 +683,14 @@
             // Primeiro, dividir pelas quebras de linha originais
             const originalLines = message.split('\n');
             const lines = [];
-            
+
             for (const originalLine of originalLines) {
                 if (originalLine.trim() === '') {
                     // Linha vazia (apenas quebra de linha)
                     lines.push('');
                     continue;
                 }
-                
+
                 const words = originalLine.split(' ');
                 let currentLine = '';
 
@@ -649,7 +726,7 @@
                     }
                     lines.push(currentLine);
                 }
-                
+
                 // Se atingiu o máximo de linhas, para
                 if (lines.length >= maxLines) {
                     return lines;
@@ -858,7 +935,7 @@
         }
 
         // ========== SISTEMA DE ATUALIZAÇÃO EM TEMPO REAL ==========
-        
+
         // Função para carregar o último ID de mensagem
         async function loadLastMessageId() {
             try {
@@ -878,16 +955,16 @@
         async function checkForNewMessages() {
             try {
                 if (!isPollingActive) return;
-                
+
                 console.log('🔍 Verificando novas mensagens...');
-                
+
                 const messages = await getAllMessagesOrdered();
-                
+
                 if (messages.length === 0) return;
-                
+
                 // Encontrar o maior ID
                 const maxId = Math.max(...messages.map(msg => msg.id));
-                
+
                 if (maxId > lastMessageId) {
                     if (lastMessageId === 0) {
                         // Primeira vez, apenas definir o último ID
@@ -896,20 +973,20 @@
                         // Novas mensagens encontradas
                         const newMessages = messages.filter(msg => msg.id > lastMessageId);
                         lastMessageId = maxId;
-                        
+
                         if (newMessages.length > 0) {
                             console.log(`🎉 ${newMessages.length} nova(s) mensagem(ns)!`);
-                            
+
                             // Atualizar contador
                             newMessagesCount += newMessages.length;
-                            
+
                             // Mostrar notificação para cada nova mensagem
                             newMessages.forEach((msg, index) => {
                                 setTimeout(() => {
                                     showNewMessageNotification(msg);
                                 }, index * 1000); // Espaçar as notificações
                             });
-                            
+
                             // Atualizar interface
                             updateNewMessagesUI();
                         }
@@ -924,18 +1001,18 @@
         function showNewMessageNotification(message) {
             const notification = document.getElementById('newMessageNotification');
             const senderElement = document.getElementById('notificationSender');
-            
+
             // Configurar conteúdo da notificação
             senderElement.textContent = `De: ${message.remetente_nome} para ${message.destinatario_nome}`;
-            
+
             // Exibir notificação
             notification.classList.add('show');
-            
+
             // Adicionar evento para fechar
             document.getElementById('closeNotification').onclick = () => {
                 notification.classList.remove('show');
             };
-            
+
             // Fechar automaticamente após 8 segundos
             setTimeout(() => {
                 notification.classList.remove('show');
@@ -947,14 +1024,14 @@
             // Atualizar título com badge
             const pageTitle = document.querySelector('.page-title');
             let badge = pageTitle.querySelector('.new-messages-badge');
-            
+
             if (!badge) {
                 badge = document.createElement('span');
                 badge.className = 'new-messages-badge';
                 pageTitle.appendChild(badge);
             }
             badge.textContent = newMessagesCount;
-            
+
             // Adicionar botão para carregar novas mensagens
             const loadContainer = document.getElementById('loadNewMessagesContainer');
             if (newMessagesCount > 0 && !loadContainer.querySelector('.load-new-messages-btn')) {
@@ -964,25 +1041,25 @@
                     <i class="fas fa-sync-alt"></i>
                    Atualizar Lista
                 `;
-                
+
                 loadButton.onclick = async () => {
                     loadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
                     loadButton.disabled = true;
-                    
+
                     // Recarregar todas as mensagens
                     await displayStats();
                     await displayMessagesOrdered();
-                    
+
                     // Resetar contador
                     newMessagesCount = 0;
                     updateNewMessagesUI();
-                    
+
                     // Remover botão após 2 segundos
                     setTimeout(() => {
                         loadButton.remove();
                     }, 2000);
                 };
-                
+
                 loadContainer.innerHTML = '';
                 loadContainer.appendChild(loadButton);
                 loadContainer.style.display = 'block';
@@ -993,12 +1070,12 @@
         function startPolling() {
             console.log('🔄 Iniciando sistema de atualização em tempo real...');
             isPollingActive = true;
-            
+
             // Verificar novas mensagens a cada 10 segundos
             pollingInterval = setInterval(async () => {
                 await checkForNewMessages();
             }, 10000); // 10 segundos
-            
+
             // Primeira verificação imediata
             setTimeout(async () => {
                 await checkForNewMessages();
@@ -1012,6 +1089,29 @@
                 clearInterval(pollingInterval);
                 pollingInterval = null;
                 console.log('⏹️ Sistema de atualização parado');
+            }
+        }
+
+
+        async function editMessage(id, remetente, destinatario, mensagem) {
+            try {
+                const response = await makeAuthenticatedRequest(`/messages/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        remetente_nome: remetente,
+                        destinatario_nome: destinatario,
+                        mensagem: mensagem
+                    })
+                });
+
+                if (response.success) {
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao editar mensagem:', error);
+                alert(`Erro ao editar mensagem: ${error.message}`);
+                return false;
             }
         }
 
@@ -1090,7 +1190,7 @@
             // Verificar se é uma mensagem nova
             const isNew = message.id > lastMessageId;
 
-            return `
+                        return `
                 <div class="message-card ${isPrinted ? 'imprinted' : ''} ${isNew ? 'new-message' : ''}" data-id="${message.id}">
                     <div class="message-header">
                         <div class="message-info">
@@ -1124,6 +1224,13 @@
                         ${mensagemPreview}
                     </div>
                     <div class="message-actions">
+                        <button class="btn btn-edit edit-message-btn" 
+                                data-id="${message.id}"
+                                data-remetente="${remetenteBase64}"
+                                data-destinatario="${destinatarioBase64}"
+                                data-mensagem="${mensagemBase64}">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
                         <button class="btn btn-certificate generate-pdf-btn"
                                 data-remetente="${remetenteBase64}"
                                 data-destinatario="${destinatarioBase64}"
@@ -1183,7 +1290,198 @@
                     document.getElementById('confirmDeleteModal').style.display = 'flex';
                 });
             });
+            document.querySelectorAll('.edit-message-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const messageId = this.getAttribute('data-id');
+                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
+                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
+                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
+
+                    openEditModal(messageId, remetente, destinatario, mensagem);
+                });
+            });
+
         }
+
+
+        let currentEditMessageId = null;
+
+        // Função para abrir o modal de edição
+        function openEditModal(messageId, remetente, destinatario, mensagem) {
+            currentEditMessageId = messageId;
+
+            // Preencher os campos do formulário
+            document.getElementById('editRemetente').value = remetente;
+            document.getElementById('editDestinatario').value = destinatario;
+            document.getElementById('editMensagem').value = mensagem;
+
+            // Atualizar contador de caracteres
+            updateCharCount();
+
+            // Exibir o modal
+            document.getElementById('editMessageModal').style.display = 'flex';
+        }
+
+        // Função para atualizar contador de caracteres
+        function updateCharCount() {
+            const textarea = document.getElementById('editMensagem');
+            const charCount = document.getElementById('editCharCount');
+            const length = textarea.value.length;
+
+            charCount.textContent = length;
+
+            if (length > 350) {
+                charCount.classList.add('warning');
+                charCount.classList.remove('error');
+            } else if (length > 390) {
+                charCount.classList.remove('warning');
+                charCount.classList.add('error');
+            } else {
+                charCount.classList.remove('warning', 'error');
+            }
+        }
+
+        // Função para configurar os modais de edição
+        function setupEditModals() {
+            const editModal = document.getElementById('editMessageModal');
+            const confirmEditModal = document.getElementById('confirmEditModal');
+            const cancelEditBtn = document.getElementById('cancelEdit');
+            const cancelConfirmEditBtn = document.getElementById('cancelConfirmEdit');
+            const editForm = document.getElementById('editMessageForm');
+            const confirmEditBtn = document.getElementById('confirmEdit');
+            const editMensagemTextarea = document.getElementById('editMensagem');
+
+            // Contador de caracteres
+            if (editMensagemTextarea) {
+                editMensagemTextarea.addEventListener('input', updateCharCount);
+                editMensagemTextarea.addEventListener('keydown', function (e) {
+                    if (this.value.length >= 400 && e.key !== 'Backspace' && e.key !== 'Delete') {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Cancelar edição
+            if (cancelEditBtn) {
+                cancelEditBtn.addEventListener('click', function () {
+                    editModal.style.display = 'none';
+                    editForm.reset();
+                    currentEditMessageId = null;
+                });
+            }
+
+            // Cancelar confirmação
+            if (cancelConfirmEditBtn) {
+                cancelConfirmEditBtn.addEventListener('click', function () {
+                    confirmEditModal.style.display = 'none';
+                });
+            }
+
+            // Submit do formulário de edição
+            if (editForm) {
+                editForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const remetente = document.getElementById('editRemetente').value.trim();
+                    const destinatario = document.getElementById('editDestinatario').value.trim();
+                    const mensagem = document.getElementById('editMensagem').value.trim();
+
+                    // Validações
+                    if (!remetente || !destinatario || !mensagem) {
+                        alert('Por favor, preencha todos os campos.');
+                        return;
+                    }
+
+                    if (mensagem.length > 400) {
+                        alert('A mensagem não pode ter mais de 400 caracteres.');
+                        return;
+                    }
+
+                    // Preparar texto de confirmação
+                    const confirmText = `
+                <div style="margin-bottom: 15px;">
+                    <strong>Confirme as alterações:</strong>
+                </div>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    <div><strong>De:</strong> ${remetente}</div>
+                    <div><strong>Para:</strong> ${destinatario}</div>
+                    <div style="margin-top: 10px;">
+                        <strong>Mensagem:</strong><br>
+                        ${mensagem}
+                    </div>
+                </div>
+                <div style="font-size: 14px; color: #666;">
+                    <i class="fas fa-info-circle"></i> Esta ação atualizará a mensagem no sistema.
+                </div>
+            `;
+
+                    document.getElementById('confirmEditText').innerHTML = confirmText;
+                    confirmEditModal.style.display = 'flex';
+
+                    // Configurar o botão de confirmação
+                    confirmEditBtn.onclick = async function () {
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+                        const success = await editMessage(currentEditMessageId, remetente, destinatario, mensagem);
+
+                        if (success) {
+                            // Fechar modais
+                            confirmEditModal.style.display = 'none';
+                            editModal.style.display = 'none';
+                            editForm.reset();
+
+                            // Recarregar mensagens
+                            await displayStats();
+                            await displayMessagesOrdered();
+
+                            // Mostrar mensagem de sucesso
+                            showSuccessNotification('Mensagem editada com sucesso!');
+                        }
+
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-check"></i> Confirmar';
+                        currentEditMessageId = null;
+                    };
+                });
+            }
+
+            // Fechar modais ao clicar fora
+            [editModal, confirmEditModal].forEach(modal => {
+                if (modal) {
+                    modal.addEventListener('click', function (e) {
+                        if (e.target === this) {
+                            this.style.display = 'none';
+                            if (this === editModal) {
+                                editForm.reset();
+                                currentEditMessageId = null;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // Função para mostrar notificação de sucesso
+        function showSuccessNotification(message) {
+            const notification = document.getElementById('newMessageNotification');
+            const title = notification.querySelector('.new-message-title');
+            const sender = notification.querySelector('.new-message-sender');
+
+            title.textContent = '✓ Alterações salvas!';
+            sender.textContent = message;
+
+            // Mudar cor para sucesso
+            notification.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                notification.style.background = ''; // Resetar cor
+            }, 3000);
+        }
+
 
         // ========== CONFIGURAR MODAL DE EXCLUSÃO INDIVIDUAL ==========
         function setupIndividualDeleteModal() {
@@ -1230,17 +1528,18 @@
         }
 
         // ========== INICIALIZAÇÃO ATUALIZADA ==========
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             // Carregar dados
             await displayStats();
             await displayMessagesOrdered();
             await loadLastMessageId();
-            
+            await setupEditModals();
+
             // Iniciar sistema de atualização
             startPolling();
 
             // Configurar botão de excluir todas
-            document.getElementById('deleteAllMessages').addEventListener('click', async function() {
+            document.getElementById('deleteAllMessages').addEventListener('click', async function () {
                 const messages = await getAllMessagesOrdered();
                 const totalMessages = messages.length;
 
@@ -1255,11 +1554,11 @@
             });
 
             // Configurar modal de exclusão em lote
-            document.getElementById('cancelDeleteAll').addEventListener('click', function() {
+            document.getElementById('cancelDeleteAll').addEventListener('click', function () {
                 document.getElementById('confirmDeleteAllModal').style.display = 'none';
             });
 
-            document.getElementById('confirmDeleteAll').addEventListener('click', async function() {
+            document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
                 const success = await deleteAllMessages();
                 if (success) {
                     await displayStats();
@@ -1272,14 +1571,14 @@
             setupIndividualDeleteModal();
 
             // Fechar modais ao clicar fora
-            document.getElementById('confirmDeleteAllModal').addEventListener('click', function(e) {
+            document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
                 if (e.target === this) {
                     this.style.display = 'none';
                 }
             });
 
             // Adicionar evento para parar polling quando a página não estiver visível
-            document.addEventListener('visibilitychange', function() {
+            document.addEventListener('visibilitychange', function () {
                 if (document.hidden) {
                     console.log('⏸️ Página em segundo plano, pausando atualizações');
                     stopPolling();

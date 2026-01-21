@@ -302,6 +302,38 @@ app.delete('/api/messages', authenticateToken, async (req, res) => {
   }
 });
 
+
+app.put('/api/messages/:id', authenticateToken, async (req, res) => {
+  try {
+    const messageId = req.params.id;
+    const messageData = req.body;
+
+    const result = await messageQueries.updateMessage(messageId, messageData);
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Mensagem atualizada com sucesso',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Erro ao atualizar mensagem:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao atualizar mensagem'
+    });
+  }
+});
+
+
+
 // Servir arquivos estáticos (opcional)
 app.use(express.static('public'));
 
