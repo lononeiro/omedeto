@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOROZU - Visualizar Reconhecimentos (RH)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -15,7 +14,7 @@
 
     <link rel="stylesheet" href="styles/rh.css">
     <style>
-        /* Estilos para notificações */
+        /* ESTILOS EXISTENTES (mantidos) */
         .new-message-notification {
             position: fixed;
             top: 20px;
@@ -104,7 +103,6 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Badge para novas mensagens */
         .new-messages-badge {
             background: #ff6b6b;
             color: white;
@@ -132,7 +130,6 @@
             }
         }
 
-        /* Botão para carregar novas mensagens */
         .load-new-messages-btn {
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
@@ -181,7 +178,6 @@
             }
         }
 
-        /* Animação para novas mensagens */
         .message-card.new-message {
             animation: highlightPulse 2s ease;
             border-left: 5px solid #4CAF50 !important;
@@ -202,6 +198,181 @@
                 background-color: transparent;
                 transform: scale(1);
             }
+        }
+
+        /* NOVOS ESTILOS PARA VISUALIZAÇÃO EM GRID */
+        .view-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .view-btn {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        .view-btn:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .view-btn.active {
+            background: #0d2b5c;
+            color: white;
+        }
+
+        /* Layout de Grid (3 colunas) */
+        .messages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Layout de Lista (original) */
+        .messages-list {
+            display: block;
+            margin-bottom: 30px;
+        }
+
+        /* Ajustes para os cards no grid */
+        .messages-grid .message-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .messages-grid .message-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .messages-grid .message-header {
+            flex-shrink: 0;
+        }
+
+        .messages-grid .message-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .messages-grid .message-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to bottom, transparent, white);
+            pointer-events: none;
+        }
+
+        .messages-grid .message-actions {
+            flex-shrink: 0;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .messages-grid .message-actions .btn {
+            width: 100%;
+            justify-content: center;
+            margin: 0;
+        }
+
+        /* Responsividade para o grid */
+        @media (max-width: 1200px) {
+            .messages-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .messages-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .view-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .view-toggle {
+                align-self: flex-end;
+            }
+        }
+
+        /* Estilo para seções no grid */
+        .messages-grid .printed-section-title {
+            grid-column: 1 / -1;
+            margin: 20px 0 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        /* Contador de visualização */
+        .view-counter {
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Botão de alternar expansão no grid */
+        .toggle-expand-btn {
+            background: none;
+            border: none;
+            color: #0d2b5c;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .toggle-expand-btn:hover {
+            text-decoration: underline;
+        }
+
+        .messages-grid .message-content.expanded {
+            max-height: none;
+        }
+
+        .messages-grid .message-content.expanded::after {
+            display: none;
         }
     </style>
 </head>
@@ -253,26 +424,43 @@
                 <!-- Preenchido via JavaScript -->
             </div>
 
-            <!-- Ações em lote -->
-            <div class="messages-header">
-                <h3 style="color: #0d2b5c;"><i class="fas fa-list"></i> Mensagens de Reconhecimento</h3>
-                <div style="display: flex; gap: 10px;">
+            <!-- Ações em lote e controles de visualização -->
+            <div class="messages-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h3 style="color: #0d2b5c; margin: 0;"><i class="fas fa-list"></i> Mensagens de Reconhecimento</h3>
+                    <div class="view-counter">
+                        <i class="fas fa-layer-group"></i>
+                        <span id="totalMessagesCount">0</span> mensagens
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <!-- Controles de Visualização -->
+                    <div class="view-controls" style="border: none; padding: 0; margin: 0;">
+                        <div class="view-toggle">
+                            <button id="listViewBtn" class="view-btn active" title="Visualização em lista">
+                                <i class="fas fa-list"></i> Lista
+                            </button>
+                            <button id="gridViewBtn" class="view-btn" title="Visualização em grade">
+                                <i class="fas fa-th-large"></i> Grade
+                            </button>
+                        </div>
+                    </div>
                     <button id="deleteAllMessages" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Excluir Todas
                     </button>
                 </div>
             </div>
 
-            <!-- Botão para carregar novas mensagens (aparece dinamicamente) -->
+            <!-- Botão para carregar novas mensagens -->
             <div id="loadNewMessagesContainer" style="display: none; text-align: center; margin: 15px 0;"></div>
 
-            <!-- Lista de mensagens -->
-            <div class="messages-container" id="messagesContainer">
+            <!-- Lista de mensagens (container principal) -->
+            <div id="messagesMainContainer">
                 <!-- Preenchido via JavaScript -->
             </div>
         </div>
 
-        <!-- Modal de confirmação para exclusão em lote -->
+        <!-- Modais (mantidos iguais) -->
         <div id="confirmDeleteAllModal" class="modal">
             <div class="modal-content">
                 <h2 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirmar
@@ -285,7 +473,6 @@
             </div>
         </div>
 
-        <!-- Modal de confirmação para exclusão individual -->
         <div id="confirmDeleteModal" class="modal">
             <div class="modal-content">
                 <h2 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirmar
@@ -302,18 +489,15 @@
         <div id="editMessageModal" class="modal">
             <div class="modal-content" style="max-width: 500px;">
                 <h2 class="modal-title"><i class="fas fa-edit" style="color: #4CAF50;"></i> Editar Mensagem</h2>
-
                 <form id="editMessageForm">
                     <div class="form-group">
                         <label for="editRemetente"><i class="fas fa-user"></i> Remetente:</label>
                         <input type="text" id="editRemetente" class="form-input" required>
                     </div>
-
                     <div class="form-group">
                         <label for="editDestinatario"><i class="fas fa-user-friends"></i> Destinatário:</label>
                         <input type="text" id="editDestinatario" class="form-input" required>
                     </div>
-
                     <div class="form-group">
                         <label for="editMensagem"><i class="fas fa-comment"></i> Mensagem:</label>
                         <textarea id="editMensagem" class="form-textarea" rows="6" required></textarea>
@@ -321,7 +505,6 @@
                             <span id="editCharCount">0</span>/400 caracteres
                         </div>
                     </div>
-
                     <div class="modal-actions">
                         <button type="button" id="cancelEdit" class="btn">
                             <i class="fas fa-times"></i> Cancelar
@@ -334,7 +517,6 @@
             </div>
         </div>
 
-        <!-- Modal de Confirmação de Edição -->
         <div id="confirmEditModal" class="modal">
             <div class="modal-content" style="max-width: 400px;">
                 <h2 class="modal-title"><i class="fas fa-check-circle" style="color: #4CAF50;"></i> Confirmar Edição
@@ -365,6 +547,375 @@
     </div>
 
     <script>
+        // Configuração inicial
+        let currentViewMode = 'list'; // 'list' ou 'grid'
+        let expandedMessages = new Set(); // IDs das mensagens expandidas no grid
+
+        // ========== FUNÇÕES DE CONTROLE DE VISUALIZAÇÃO ==========
+
+        function initViewControls() {
+            const listViewBtn = document.getElementById('listViewBtn');
+            const gridViewBtn = document.getElementById('gridViewBtn');
+
+            listViewBtn.addEventListener('click', function() {
+                if (currentViewMode !== 'list') {
+                    currentViewMode = 'list';
+                    listViewBtn.classList.add('active');
+                    gridViewBtn.classList.remove('active');
+                    renderMessages();
+                }
+            });
+
+            gridViewBtn.addEventListener('click', function() {
+                if (currentViewMode !== 'grid') {
+                    currentViewMode = 'grid';
+                    gridViewBtn.classList.add('active');
+                    listViewBtn.classList.remove('active');
+                    renderMessages();
+                }
+            });
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesMainContainer');
+            const messages = window.currentMessages || [];
+
+            // Atualizar contador
+            document.getElementById('totalMessagesCount').textContent = messages.length;
+
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="no-messages">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Nenhuma mensagem encontrada</h3>
+                        <p>Aguardando novas mensagens de reconhecimento...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentViewMode === 'list') {
+                renderListView(messages);
+            } else {
+                renderGridView(messages);
+            }
+
+            // Re-adicionar event listeners
+            addMessageEventListeners();
+        }
+
+        function renderListView(messages) {
+            const container = document.getElementById('messagesMainContainer');
+            
+            // Separar mensagens impressas e não impressas
+            const pendingMessages = messages.filter(msg => !msg.isprinted);
+            const printedMessages = messages.filter(msg => msg.isprinted);
+
+            let html = '<div class="messages-list">';
+
+            // Mensagens não impressas (pendentes)
+            if (pendingMessages.length > 0) {
+                pendingMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, false);
+                });
+            }
+
+            // Mensagens impressas
+            if (printedMessages.length > 0) {
+                html += `<h4 class="printed-section-title"><i class="fas fa-print"></i> Já Impressas (${printedMessages.length})</h4>`;
+                printedMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, true);
+                });
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderGridView(messages) {
+            const container = document.getElementById('messagesMainContainer');
+            
+            // Separar mensagens impressas e não impressas
+            const pendingMessages = messages.filter(msg => !msg.isprinted);
+            const printedMessages = messages.filter(msg => msg.isprinted);
+
+            let html = '<div class="messages-grid">';
+
+            // Mensagens não impressas (pendentes)
+            pendingMessages.forEach((message, index) => {
+                html += generateMessageCardHTML(message, false, true);
+            });
+
+            // Mensagens impressas
+            if (printedMessages.length > 0) {
+                html += `<h4 class="printed-section-title" style="grid-column: 1 / -1;">
+                            <i class="fas fa-print"></i> Já Impressas (${printedMessages.length})
+                         </h4>`;
+                printedMessages.forEach((message, index) => {
+                    html += generateMessageCardHTML(message, true, true);
+                });
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Modificar a função generateMessageCardHTML para suportar grid
+        function generateMessageCardHTML(message, isPrinted, isGrid = false) {
+            const dataFormatada = message.created_at ?
+                new Date(message.created_at).toLocaleDateString('pt-BR') :
+                new Date().toLocaleDateString('pt-BR');
+
+            const horaFormatada = message.created_at ?
+                new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) :
+                '';
+
+            // Verificar se é uma mensagem nova
+            const isNew = message.id > lastMessageId;
+
+            // Usar base64 para evitar problemas com caracteres especiais
+            const remetenteBase64 = btoa(unescape(encodeURIComponent(message.remetente_nome)));
+            const destinatarioBase64 = btoa(unescape(encodeURIComponent(message.destinatario_nome)));
+            const mensagemBase64 = btoa(unescape(encodeURIComponent(message.mensagem)));
+
+            // Data de impressão se disponível
+            const printedDate = message.printed_at ?
+                new Date(message.printed_at).toLocaleDateString('pt-BR') :
+                '';
+
+            // Para grid, mostrar mensagem completa se estiver expandida
+            const isExpanded = expandedMessages.has(message.id);
+            const mensagemPreview = isGrid ? 
+                (isExpanded ? message.mensagem : 
+                    (message.mensagem.length > 150 ? 
+                        message.mensagem.substring(0, 150) + '...' : 
+                        message.mensagem)) :
+                (message.mensagem.length > 200 ? 
+                    message.mensagem.substring(0, 200) + '...' : 
+                    message.mensagem);
+
+            return `
+                <div class="message-card ${isPrinted ? 'imprinted' : ''} ${isNew ? 'new-message' : ''}" data-id="${message.id}">
+                    <div class="message-header">
+                        <div class="message-info">
+                            <div class="message-from-to">
+                                <div class="message-from">
+                                    <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
+                                </div>
+                                <div class="message-to">
+                                    <strong><i class="fas fa-user-friends"></i> Para:</strong> ${message.destinatario_nome}
+                                </div>
+                            </div>
+                            <div class="message-date">
+                                <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
+                                ${isPrinted && printedDate ?
+                                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
+                                    `<span class="status-badge pending">PENDENTE</span>`
+                                }
+                                ${isNew ? '<span class="status-badge new">NOVA</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="message-status">
+                            ${!isPrinted ?
+                                `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
+                                    <i class="fas fa-check-circle"></i> ${isGrid ? 'Marcar' : 'Marcar como Impresso'}
+                                </button>` :
+                                ''
+                            }
+                        </div>
+                    </div>
+                    <div class="message-content ${isGrid && isExpanded ? 'expanded' : ''}">
+                        ${mensagemPreview}
+                    </div>
+                    ${isGrid && message.mensagem.length > 150 ?
+                        `<button class="toggle-expand-btn" data-id="${message.id}">
+                            <i class="fas fa-${isExpanded ? 'minus' : 'plus'}-circle"></i>
+                            ${isExpanded ? 'Mostrar menos' : 'Mostrar mais'}
+                        </button>` : ''
+                    }
+                    <div class="message-actions">
+                        <button class="btn btn-edit edit-message-btn" 
+                                data-id="${message.id}"
+                                data-remetente="${remetenteBase64}"
+                                data-destinatario="${destinatarioBase64}"
+                                data-mensagem="${mensagemBase64}">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-certificate generate-pdf-btn"
+                                data-remetente="${remetenteBase64}"
+                                data-destinatario="${destinatarioBase64}"
+                                data-mensagem="${mensagemBase64}">
+                            <i class="fas fa-file-pdf"></i> Gerar PDF
+                        </button>
+                        <button class="btn btn-delete delete-message-btn" data-id="${message.id}">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Modificar a função displayMessagesOrdered para usar o sistema de visualização
+        async function displayMessagesOrdered() {
+            const messages = await getAllMessagesOrdered();
+            window.currentMessages = messages; // Salvar para re-renderização
+            renderMessages();
+        }
+
+        // Adicionar função para alternar expansão no grid
+        function addExpandToggleListeners() {
+            document.querySelectorAll('.toggle-expand-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const messageId = parseInt(this.getAttribute('data-id'));
+                    
+                    if (expandedMessages.has(messageId)) {
+                        expandedMessages.delete(messageId);
+                    } else {
+                        expandedMessages.add(messageId);
+                    }
+                    
+                    // Re-renderizar apenas essa mensagem
+                    renderMessages();
+                });
+            });
+        }
+
+        // Modificar addMessageEventListeners para incluir expand toggles
+        function addMessageEventListeners() {
+            // Botões de gerar PDF
+            document.querySelectorAll('.generate-pdf-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
+                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
+                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
+                    gerarCertificadoPDF(remetente, destinatario, mensagem);
+                });
+            });
+
+            // Botões de marcar como impresso
+            document.querySelectorAll('.mark-printed-btn').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const messageId = this.getAttribute('data-id');
+                    const confirmed = confirm('Marcar esta mensagem como impressa? Ela será movida para a seção "Já Impressas".');
+
+                    if (confirmed) {
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+
+                        await markAsPrinted(messageId);
+                    }
+                });
+            });
+
+            // Botões de exclusão individual
+            document.querySelectorAll('.delete-message-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const messageId = this.getAttribute('data-id');
+                    const messageCard = this.closest('.message-card');
+                    const destinatario = messageCard.querySelector('.message-to').textContent.replace('Para:', '').trim();
+
+                    // Configurar o texto do modal
+                    document.getElementById('confirmDeleteText').textContent =
+                        `Tem certeza que deseja excluir a mensagem para ${destinatario}? Esta ação não pode ser desfeita.`;
+
+                    // Armazenar o ID da mensagem a ser excluída
+                    currentMessageIdToDelete = messageId;
+
+                    // Exibir o modal
+                    document.getElementById('confirmDeleteModal').style.display = 'flex';
+                });
+            });
+
+            // Botões de edição
+            document.querySelectorAll('.edit-message-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const messageId = this.getAttribute('data-id');
+                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
+                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
+                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
+
+                    openEditModal(messageId, remetente, destinatario, mensagem);
+                });
+            });
+
+            // Botões de expandir/recolher no grid
+            addExpandToggleListeners();
+        }
+
+        // Inicialização atualizada
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Inicializar controles de visualização
+            initViewControls();
+            
+            // Carregar dados
+            await displayStats();
+            await displayMessagesOrdered();
+            await loadLastMessageId();
+            await setupEditModals();
+
+            // Iniciar sistema de atualização
+            startPolling();
+
+            // Configurar botão de excluir todas
+            document.getElementById('deleteAllMessages').addEventListener('click', async function () {
+                const messages = await getAllMessagesOrdered();
+                const totalMessages = messages.length;
+
+                if (totalMessages === 0) {
+                    alert('Não há mensagens para excluir.');
+                    return;
+                }
+
+                document.getElementById('confirmDeleteAllText').textContent =
+                    `Tem certeza que deseja excluir todas as ${totalMessages} mensagens? Esta ação não pode ser desfeita.`;
+                document.getElementById('confirmDeleteAllModal').style.display = 'flex';
+            });
+
+            // Configurar modal de exclusão em lote
+            document.getElementById('cancelDeleteAll').addEventListener('click', function () {
+                document.getElementById('confirmDeleteAllModal').style.display = 'none';
+            });
+
+            document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
+                const success = await deleteAllMessages();
+                if (success) {
+                    await displayStats();
+                    await displayMessagesOrdered();
+                }
+                document.getElementById('confirmDeleteAllModal').style.display = 'none';
+            });
+
+            // Configurar modal de exclusão individual
+            setupIndividualDeleteModal();
+
+            // Fechar modais ao clicar fora
+            document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+
+            // Adicionar evento para parar polling quando a página não estiver visível
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    console.log('⏸️ Página em segundo plano, pausando atualizações');
+                    stopPolling();
+                } else {
+                    console.log('▶️ Página em primeiro plano, retomando atualizações');
+                    startPolling();
+                }
+            });
+
+            // Solicitar permissão para notificações
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        });
+
+        // O restante do código JavaScript permanece igual...
+        // [TODO: Copiar todo o resto do código JavaScript existente aqui]
+        // Nota: Mantenha todas as outras funções (API, autenticação, geração de PDF, etc.) exatamente como estão
+
         // URL da API
         const API_URL = 'https://omedeto.onrender.com/api';
 
@@ -380,16 +931,13 @@
         // -----------------------
         // Japanese size tuning
         // -----------------------
-        // Adjust this scale to taste (0.7–0.9). Lower = smaller Japanese text.
         const JAPANESE_SCALE = 0.78;
 
-        // Detect if text contains CJK (Japanese/Chinese/Kanji/Kana etc.)
         function containsJapanese(text) {
             if (!text) return false;
             return /[\u3000-\u30FF\u4E00-\u9FFF\uFF00-\uFFEF]/.test(text);
         }
 
-        // Draw centered text, automatically scaling if it's Japanese
         async function drawCenteredText(page, text, baseY, baseSize, font, color = PDFLib.rgb(0, 0, 0)) {
             const isJP = containsJapanese(text);
             const size = isJP ? baseSize * JAPANESE_SCALE : baseSize;
@@ -398,7 +946,6 @@
             try {
                 textWidth = font.widthOfTextAtSize(text, size);
             } catch (e) {
-                // fallback approximation if width measurement fails
                 textWidth = text.length * size * (isJP ? 0.5 : 0.5);
             }
 
@@ -412,7 +959,6 @@
             });
         }
 
-        // Draw left-aligned text, scaling Japanese if necessary
         async function drawLeftText(page, text, x, y, baseSize, font, color = PDFLib.rgb(0, 0, 0)) {
             const isJP = containsJapanese(text);
             const size = isJP ? baseSize * JAPANESE_SCALE : baseSize;
@@ -428,7 +974,6 @@
 
         // ========== FUNÇÃO PARA CARREGAR FONTES JAPONESAS ==========
         async function loadJapaneseFont(pdfDoc, isBold = false) {
-            // ensure fontkit is registered (harmless if already registered)
             try {
                 pdfDoc.registerFontkit(fontkit);
             } catch (e) {
@@ -453,12 +998,10 @@
         }
 
         // ========== SISTEMA DE AUTENTICAÇÃO ==========
-        // Função para obter o token de autenticação
         function getAuthToken() {
             return localStorage.getItem('rh_auth_token');
         }
 
-        // Função para fazer requisições autenticadas
         async function makeAuthenticatedRequest(endpoint, options = {}) {
             const token = getAuthToken();
             if (!token) {
@@ -476,7 +1019,6 @@
             const response = await fetch(`${API_URL}${endpoint}`, mergedOptions);
 
             if (response.status === 401) {
-                // Token inválido ou expirado
                 localStorage.removeItem('rh_auth_token');
                 localStorage.removeItem('rh_auth_expires');
                 window.location.href = 'login.html';
@@ -491,7 +1033,6 @@
             return response.json();
         }
 
-        // Verificar autenticação
         function checkAuth() {
             const authToken = localStorage.getItem('rh_auth_token');
             const authExpires = localStorage.getItem('rh_auth_expires');
@@ -505,7 +1046,6 @@
                 return false;
             }
 
-            // Verificar se o token expirou
             const now = Date.now();
             if (authExpires && now > parseInt(authExpires)) {
                 console.log('❌ Token expirado em:', new Date(parseInt(authExpires)).toLocaleString());
@@ -514,9 +1054,7 @@
                 return false;
             }
 
-            // Verificar adicionalmente se o token é válido decodificando-o
             try {
-                // Um token JWT tem 3 partes: header.payload.signature
                 const parts = authToken.split('.');
                 if (parts.length !== 3) {
                     console.log('❌ Token JWT inválido (não tem 3 partes)');
@@ -525,11 +1063,9 @@
                     return false;
                 }
 
-                // Tentar decodificar o payload (segunda parte)
                 const payload = JSON.parse(atob(parts[1]));
                 console.log('✅ Token JWT válido, payload:', payload);
 
-                // Verificar expiração no próprio token (opcional)
                 if (payload.exp && payload.exp * 1000 < Date.now()) {
                     console.log('❌ Token JWT expirado (no payload)');
                     localStorage.removeItem('rh_auth_token');
@@ -548,11 +1084,8 @@
             return true;
         }
 
-        // Função para limpar tokens de autenticação antigos
         function cleanupOldAuth() {
-            // Limpar tokens antigos com nomes diferentes
             const oldTokenNames = ['token', 'authToken', 'jwtToken', 'userToken'];
-
             oldTokenNames.forEach(tokenName => {
                 if (localStorage.getItem(tokenName)) {
                     console.log(`🗑️  Limpando token antigo: ${tokenName}`);
@@ -560,19 +1093,16 @@
                 }
             });
         }
-        // Primeiro, limpar tokens antigos
+
         cleanupOldAuth();
 
-        // Redirecionar para login se não autenticado
         if (!checkAuth()) {
             alert('Acesso negado. Por favor, faça login.');
             window.location.href = 'login.html';
         } else {
-            // Mostrar botão de logout
             document.getElementById('logoutBtn').style.display = 'flex';
         }
 
-        // Logout
         document.getElementById('logoutBtn').addEventListener('click', function () {
             if (confirm('Deseja realmente sair do sistema?')) {
                 localStorage.removeItem('rh_auth_token');
@@ -593,6 +1123,19 @@
                 console.error('Erro ao buscar mensagens:', error);
                 alert(`Erro ao buscar mensagens: ${error.message}`);
                 return [];
+            }
+        }
+
+        async function getAllMessagesOrdered() {
+            try {
+                const response = await makeAuthenticatedRequest('/messages/ordered');
+                if (response.success && response.data) {
+                    return response.data;
+                }
+                return [];
+            } catch (error) {
+                console.error('Erro ao buscar mensagens ordenadas:', error);
+                return getAllMessages();
             }
         }
 
@@ -668,25 +1211,21 @@
             `;
         }
 
-        // ========== FUNÇÃO PARA LIMPAR TEXTO PARA PDF ==========
         function cleanTextForPDF(text) {
             if (!text) return '';
             return text
-                .replace(/\r?\n|\r/g, ' ')  // Substituir quebras de linha por espaço
+                .replace(/\r?\n|\r/g, ' ')
                 .trim();
         }
 
-        // ========== FUNÇÃO PARA FORMATAR MENSAGEM EM LINHAS ==========
         function formatMessageLines(message, maxCharsPerLine = 50, maxLines = 8) {
             if (!message) return [];
 
-            // Primeiro, dividir pelas quebras de linha originais
             const originalLines = message.split('\n');
             const lines = [];
 
             for (const originalLine of originalLines) {
                 if (originalLine.trim() === '') {
-                    // Linha vazia (apenas quebra de linha)
                     lines.push('');
                     continue;
                 }
@@ -695,11 +1234,8 @@
                 let currentLine = '';
 
                 for (const word of words) {
-                    // Se adicionar esta palavra exceder o limite da linha
                     if ((currentLine + ' ' + word).length > maxCharsPerLine && currentLine.length > 0) {
-                        // Se já atingiu o máximo de linhas, para aqui
                         if (lines.length >= maxLines - 1) {
-                            // Adiciona "..." no final da última linha se truncou
                             if (currentLine.length > maxCharsPerLine - 3) {
                                 currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
                             }
@@ -713,11 +1249,8 @@
                     }
                 }
 
-                // Adiciona a última linha se houver conteúdo
                 if (currentLine) {
-                    // Se já atingiu o máximo de linhas, para aqui
                     if (lines.length >= maxLines) {
-                        // Adiciona "..." no final se necessário
                         if (currentLine.length > maxCharsPerLine - 3) {
                             currentLine = currentLine.substring(0, maxCharsPerLine - 3) + '...';
                         }
@@ -727,13 +1260,11 @@
                     lines.push(currentLine);
                 }
 
-                // Se atingiu o máximo de linhas, para
                 if (lines.length >= maxLines) {
                     return lines;
                 }
             }
 
-            // Limita ao número máximo de linhas
             return lines.slice(0, maxLines);
         }
 
@@ -747,55 +1278,43 @@
                 console.log('Remetente:', remetente);
                 console.log('Destinatário:', destinatario);
 
-                // Limpar os textos
                 const cleanedRemetente = cleanTextForPDF(remetente);
                 const cleanedDestinatario = cleanTextForPDF(destinatario);
                 const cleanedMensagem = cleanTextForPDF(mensagem);
 
-                // Validar comprimento máximo
                 if (cleanedMensagem.length > 400) {
                     alert('A mensagem é muito longa para o certificado. Por favor, limite a 400 caracteres.');
                     loader.style.display = 'none';
                     return;
                 }
 
-                // Tentar carregar o template PDF
                 let pdfBytes;
                 try {
                     const response = await fetch('Certificado.pdf');
                     if (!response.ok) throw new Error('PDF não encontrado');
                     pdfBytes = await response.arrayBuffer();
                 } catch {
-                    // Se não encontrar, criar PDF alternativo
                     console.log('Template não encontrado, criando PDF alternativo');
                     return criarPDFAlternativo(cleanedRemetente, cleanedDestinatario, cleanedMensagem);
                 }
 
-                // Carregar e modificar o PDF
                 const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
                 pdfDoc.registerFontkit(fontkit);
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 const { width, height } = firstPage.getSize();
 
-                // Carregar fontes japonesas
                 console.log('Carregando fontes japonesas...');
                 const fontRegular = await loadJapaneseFont(pdfDoc, false);
                 console.log('Fontes carregadas com sucesso');
 
-                // Calcular posições
                 const centerX = width / 2;
-
-                //destinatario com a fonte azul
                 const destinatarioSize = 18;
-                // Adicionar destinatário - agora using automatic JP scaling + centering helper
                 await drawCenteredText(firstPage, cleanedDestinatario, height - 200, destinatarioSize, fontRegular, PDFLib.rgb(0, 0, 0));
 
-                // Adicionar remetente - agora using automatic JP scaling + centering helper
                 const remetenteSize = 18;
                 await drawCenteredText(firstPage, cleanedRemetente, 150, remetenteSize, fontRegular, PDFLib.rgb(0, 0, 0));
 
-                // Adicionar mensagem formatada
                 const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
                 let yPos = height - 250;
 
@@ -807,21 +1326,17 @@
                         await drawCenteredText(firstPage, line, yPos, 16, fontRegular, PDFLib.rgb(0, 0, 0));
                     } catch (error) {
                         console.warn(`Erro ao desenhar linha ${i}, usando posição padrão:`, error);
-                        // Fallback left-aligned (also scaled for JP)
                         await drawLeftText(firstPage, line, 100, yPos, 16, fontRegular, PDFLib.rgb(0, 0, 0));
                     }
                     yPos -= 25;
                 }
 
-                // Salvar PDF
                 console.log('Salvando PDF...');
                 const modifiedPdfBytes = await pdfDoc.save();
 
-                // Criar download
                 const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                // Nome do arquivo sem caracteres especiais
                 const fileName = `Certificado_YOROZU_${Date.now()}.pdf`;
                 link.download = fileName;
                 document.body.appendChild(link);
@@ -838,7 +1353,6 @@
             }
         }
 
-        // ========== FUNÇÃO PARA CRIAR PDF ALTERNATIVO ==========
         async function criarPDFAlternativo(remetente, destinatario, mensagem) {
             console.log('Criando PDF alternativo...');
 
@@ -847,22 +1361,16 @@
             const page = pdfDoc.addPage([600, 400]);
             const { width, height } = page.getSize();
 
-            // Carregar fontes japonesas
             const fontRegular = await loadJapaneseFont(pdfDoc, false);
             const fontBold = await loadJapaneseFont(pdfDoc, true);
             const color = PDFLib.rgb(0.05, 0.17, 0.36);
 
-            // Título (bold)
             await drawLeftText(page, 'CERTIFICADO DE RECONHECIMENTO', 50, height - 60, 24, fontBold, color);
-
-            // Logo YOROZU
             await drawLeftText(page, 'YOROZU AUTOMOTIVA DO BRASIL', 50, height - 100, 18, fontBold, color);
 
-            // Destinatário (left, may be JP)
             const destinatarioText = `Para: ${destinatario}`;
             await drawLeftText(page, destinatarioText, 50, height - 160, 22, fontBold, PDFLib.rgb(0, 0, 0));
 
-            // Mensagem formatada
             const messageLines = formatMessageLines(mensagem, 60, 6);
             let yPos = height - 180;
             for (let i = 0; i < messageLines.length; i++) {
@@ -870,15 +1378,12 @@
                 yPos -= 25;
             }
 
-            // Remetente
             const remetenteText = `De: ${remetente}`;
             await drawLeftText(page, remetenteText, 50, 100, 16, fontBold, PDFLib.rgb(0, 0, 0));
 
-            // Data
             const data = new Date().toLocaleDateString('pt-BR');
             await drawLeftText(page, `Data: ${data}`, 50, 70, 14, fontRegular, PDFLib.rgb(0.4, 0.4, 0.4));
 
-            // Salvar PDF
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
@@ -892,7 +1397,6 @@
             console.log('PDF alternativo criado com sucesso!');
         }
 
-        // ========== FUNÇÕES PARA MARCAÇÃO DE IMPRESSÃO ==========
         async function markAsPrinted(messageId) {
             try {
                 const response = await makeAuthenticatedRequest(`/messages/${messageId}/printed`, {
@@ -900,20 +1404,13 @@
                 });
 
                 if (response.success) {
-                    // Encontrar o card da mensagem
                     const messageCard = document.querySelector(`.message-card[data-id="${messageId}"]`);
-
                     if (messageCard) {
-                        // Adicionar classe de animação
                         messageCard.classList.add('slide-down');
-
-                        // Aguardar animação e mover para baixo
                         setTimeout(async () => {
-                            // Recarregar mensagens ordenadas
                             await displayMessagesOrdered();
                         }, 500);
                     }
-
                     return true;
                 }
                 return false;
@@ -924,29 +1421,11 @@
             }
         }
 
-        // Função para buscar mensagens ordenadas (não impressas primeiro)
-        async function getAllMessagesOrdered() {
-            try {
-                const response = await makeAuthenticatedRequest('/messages/ordered');
-                if (response.success && response.data) {
-                    return response.data;
-                }
-                return [];
-            } catch (error) {
-                console.error('Erro ao buscar mensagens ordenadas:', error);
-                // Fallback para a rota normal
-                return getAllMessages();
-            }
-        }
-
         // ========== SISTEMA DE ATUALIZAÇÃO EM TEMPO REAL ==========
-
-        // Função para carregar o último ID de mensagem
         async function loadLastMessageId() {
             try {
                 const messages = await getAllMessagesOrdered();
                 if (messages.length > 0) {
-                    // Ordenar por ID decrescente e pegar o maior
                     const sortedMessages = [...messages].sort((a, b) => b.id - a.id);
                     lastMessageId = sortedMessages[0].id;
                     console.log(`📌 Último ID carregado: ${lastMessageId}`);
@@ -956,43 +1435,31 @@
             }
         }
 
-        // Função para verificar novas mensagens
         async function checkForNewMessages() {
             try {
                 if (!isPollingActive) return;
-
                 console.log('🔍 Verificando novas mensagens...');
-
                 const messages = await getAllMessagesOrdered();
-
                 if (messages.length === 0) return;
 
-                // Encontrar o maior ID
                 const maxId = Math.max(...messages.map(msg => msg.id));
-
                 if (maxId > lastMessageId) {
                     if (lastMessageId === 0) {
-                        // Primeira vez, apenas definir o último ID
                         lastMessageId = maxId;
                     } else {
-                        // Novas mensagens encontradas
                         const newMessages = messages.filter(msg => msg.id > lastMessageId);
                         lastMessageId = maxId;
 
                         if (newMessages.length > 0) {
                             console.log(`🎉 ${newMessages.length} nova(s) mensagem(ns)!`);
-
-                            // Atualizar contador
                             newMessagesCount += newMessages.length;
 
-                            // Mostrar notificação para cada nova mensagem
                             newMessages.forEach((msg, index) => {
                                 setTimeout(() => {
                                     showNewMessageNotification(msg);
-                                }, index * 1000); // Espaçar as notificações
+                                }, index * 1000);
                             });
 
-                            // Atualizar interface
                             updateNewMessagesUI();
                         }
                     }
@@ -1002,31 +1469,23 @@
             }
         }
 
-        // Função para exibir notificação de nova mensagem
         function showNewMessageNotification(message) {
             const notification = document.getElementById('newMessageNotification');
             const senderElement = document.getElementById('notificationSender');
 
-            // Configurar conteúdo da notificação
             senderElement.textContent = `De: ${message.remetente_nome} para ${message.destinatario_nome}`;
-
-            // Exibir notificação
             notification.classList.add('show');
 
-            // Adicionar evento para fechar
             document.getElementById('closeNotification').onclick = () => {
                 notification.classList.remove('show');
             };
 
-            // Fechar automaticamente após 8 segundos
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 8000);
         }
 
-        // Função para atualizar a interface com novas mensagens
         function updateNewMessagesUI() {
-            // Atualizar título com badge
             const pageTitle = document.querySelector('.page-title');
             let badge = pageTitle.querySelector('.new-messages-badge');
 
@@ -1037,7 +1496,6 @@
             }
             badge.textContent = newMessagesCount;
 
-            // Adicionar botão para carregar novas mensagens
             const loadContainer = document.getElementById('loadNewMessagesContainer');
             if (newMessagesCount > 0 && !loadContainer.querySelector('.load-new-messages-btn')) {
                 const loadButton = document.createElement('button');
@@ -1051,15 +1509,12 @@
                     loadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
                     loadButton.disabled = true;
 
-                    // Recarregar todas as mensagens
                     await displayStats();
                     await displayMessagesOrdered();
 
-                    // Resetar contador
                     newMessagesCount = 0;
                     updateNewMessagesUI();
 
-                    // Remover botão após 2 segundos
                     setTimeout(() => {
                         loadButton.remove();
                     }, 2000);
@@ -1071,23 +1526,19 @@
             }
         }
 
-        // Função para iniciar o sistema de polling
         function startPolling() {
             console.log('🔄 Iniciando sistema de atualização em tempo real...');
             isPollingActive = true;
 
-            // Verificar novas mensagens a cada 10 segundos
             pollingInterval = setInterval(async () => {
                 await checkForNewMessages();
-            }, 10000); // 10 segundos
+            }, 10000);
 
-            // Primeira verificação imediata
             setTimeout(async () => {
                 await checkForNewMessages();
             }, 1000);
         }
 
-        // Função para parar o sistema de polling
         function stopPolling() {
             isPollingActive = false;
             if (pollingInterval) {
@@ -1096,7 +1547,6 @@
                 console.log('⏹️ Sistema de atualização parado');
             }
         }
-
 
         async function editMessage(id, remetente, destinatario, mensagem) {
             try {
@@ -1120,214 +1570,17 @@
             }
         }
 
-        // ========== EXIBIR MENSAGENS ORDENADAS ==========
-        async function displayMessagesOrdered() {
-            const messages = await getAllMessagesOrdered();
-            const container = document.getElementById('messagesContainer');
-
-            if (messages.length === 0) {
-                container.innerHTML = `
-                    <div class="no-messages">
-                        <i class="fas fa-inbox"></i>
-                        <h3>Nenhuma mensagem encontrada</h3>
-                        <p>Aguardando novas mensagens de reconhecimento...</p>
-                        <div style="margin-top: 20px;">
-                            
-                            <span style="color: #666; font-size: 0.9rem;">Monitorando novas mensagens</span>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // Separar mensagens impressas e não impressas
-            const pendingMessages = messages.filter(msg => !msg.isprinted);
-            const printedMessages = messages.filter(msg => msg.isprinted);
-
-            let html = '';
-
-            // Mensagens não impressas (pendentes)
-            if (pendingMessages.length > 0) {
-                pendingMessages.forEach((message, index) => {
-                    html += generateMessageCardHTML(message, false);
-                });
-            }
-
-            // Mensagens impressas
-            if (printedMessages.length > 0) {
-                html += `<h4 class="printed-section-title"><i class="fas fa-print"></i> Já Impressas (${printedMessages.length})</h4>`;
-
-                printedMessages.forEach((message, index) => {
-                    html += generateMessageCardHTML(message, true);
-                });
-            }
-
-            container.innerHTML = html;
-
-            // Adicionar event listeners
-            addMessageEventListeners();
-        }
-
-        // ========== GERAR HTML DO CARD DA MENSAGEM ==========
-        function generateMessageCardHTML(message, isPrinted) {
-            const dataFormatada = message.created_at ?
-                new Date(message.created_at).toLocaleDateString('pt-BR') :
-                new Date().toLocaleDateString('pt-BR');
-
-            const horaFormatada = message.created_at ?
-                new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) :
-                '';
-
-            const mensagemPreview = message.mensagem.length > 200 ?
-                message.mensagem.substring(0, 200) + '...' :
-                message.mensagem;
-
-            // Usar base64 para evitar problemas com caracteres especiais
-            const remetenteBase64 = btoa(unescape(encodeURIComponent(message.remetente_nome)));
-            const destinatarioBase64 = btoa(unescape(encodeURIComponent(message.destinatario_nome)));
-            const mensagemBase64 = btoa(unescape(encodeURIComponent(message.mensagem)));
-
-            // Data de impressão se disponível
-            const printedDate = message.printed_at ?
-                new Date(message.printed_at).toLocaleDateString('pt-BR') :
-                '';
-
-            // Verificar se é uma mensagem nova
-            const isNew = message.id > lastMessageId;
-
-                        return `
-                <div class="message-card ${isPrinted ? 'imprinted' : ''} ${isNew ? 'new-message' : ''}" data-id="${message.id}">
-                    <div class="message-header">
-                        <div class="message-info">
-                            <div class="message-from-to">
-                                <div class="message-from">
-                                    <strong><i class="fas fa-user"></i> De:</strong> ${message.remetente_nome}
-                                </div>
-                                <div class="message-to">
-                                    <strong><i class="fas fa-user-friends"></i> Para:</strong> ${message.destinatario_nome}
-                                </div>
-                            </div>
-                            <div class="message-date">
-                                <i class="far fa-clock"></i> ${dataFormatada} ${horaFormatada ? `às ${horaFormatada}` : ''}
-                                ${isPrinted && printedDate ?
-                    `<span class="imprinted-badge">✓ Impresso em ${printedDate}</span>` :
-                    `<span class="status-badge pending">PENDENTE</span>`
-                }
-                                ${isNew ? '<span class="status-badge new">NOVA</span>' : ''}
-                            </div>
-                        </div>
-                        <div class="message-status">
-                            ${!isPrinted ?
-                    `<button class="btn-mark-printed mark-printed-btn" data-id="${message.id}">
-                                    <i class="fas fa-check-circle"></i> Marcar como Impresso
-                                </button>` :
-                    ''
-                }
-                        </div>
-                    </div>
-                    <div class="message-content">
-                        ${mensagemPreview}
-                    </div>
-                    <div class="message-actions">
-                        <button class="btn btn-edit edit-message-btn" 
-                                data-id="${message.id}"
-                                data-remetente="${remetenteBase64}"
-                                data-destinatario="${destinatarioBase64}"
-                                data-mensagem="${mensagemBase64}">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button class="btn btn-certificate generate-pdf-btn"
-                                data-remetente="${remetenteBase64}"
-                                data-destinatario="${destinatarioBase64}"
-                                data-mensagem="${mensagemBase64}">
-                            <i class="fas fa-file-pdf"></i> Gerar Certificado PDF
-                        </button>
-                        <button class="btn btn-delete delete-message-btn" data-id="${message.id}">
-                            <i class="fas fa-trash"></i> Excluir
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // ========== ADICIONAR EVENT LISTENERS ==========
-        function addMessageEventListeners() {
-            // Botões de gerar PDF
-            document.querySelectorAll('.generate-pdf-btn').forEach(button => {
-                button.addEventListener('click', function () {
-                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
-                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
-                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
-                    gerarCertificadoPDF(remetente, destinatario, mensagem);
-                });
-            });
-
-            // Botões de marcar como impresso
-            document.querySelectorAll('.mark-printed-btn').forEach(button => {
-                button.addEventListener('click', async function () {
-                    const messageId = this.getAttribute('data-id');
-                    const confirmed = confirm('Marcar esta mensagem como impressa? Ela será movida para a seção "Já Impressas".');
-
-                    if (confirmed) {
-                        this.disabled = true;
-                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
-
-                        await markAsPrinted(messageId);
-                    }
-                });
-            });
-
-            // Botões de exclusão individual
-            document.querySelectorAll('.delete-message-btn').forEach(button => {
-                button.addEventListener('click', function () {
-                    const messageId = this.getAttribute('data-id');
-                    const messageCard = this.closest('.message-card');
-                    const destinatario = messageCard.querySelector('.message-to').textContent.replace('Para:', '').trim();
-
-                    // Configurar o texto do modal
-                    document.getElementById('confirmDeleteText').textContent =
-                        `Tem certeza que deseja excluir a mensagem para ${destinatario}? Esta ação não pode ser desfeita.`;
-
-                    // Armazenar o ID da mensagem a ser excluída
-                    currentMessageIdToDelete = messageId;
-
-                    // Exibir o modal
-                    document.getElementById('confirmDeleteModal').style.display = 'flex';
-                });
-            });
-            document.querySelectorAll('.edit-message-btn').forEach(button => {
-                button.addEventListener('click', function () {
-                    const messageId = this.getAttribute('data-id');
-                    const remetente = decodeURIComponent(escape(atob(this.getAttribute('data-remetente'))));
-                    const destinatario = decodeURIComponent(escape(atob(this.getAttribute('data-destinatario'))));
-                    const mensagem = decodeURIComponent(escape(atob(this.getAttribute('data-mensagem'))));
-
-                    openEditModal(messageId, remetente, destinatario, mensagem);
-                });
-            });
-
-        }
-
-
         let currentEditMessageId = null;
 
-        // Função para abrir o modal de edição
         function openEditModal(messageId, remetente, destinatario, mensagem) {
             currentEditMessageId = messageId;
-
-            // Preencher os campos do formulário
             document.getElementById('editRemetente').value = remetente;
             document.getElementById('editDestinatario').value = destinatario;
             document.getElementById('editMensagem').value = mensagem;
-
-            // Atualizar contador de caracteres
             updateCharCount();
-
-            // Exibir o modal
             document.getElementById('editMessageModal').style.display = 'flex';
         }
 
-        // Função para atualizar contador de caracteres
         function updateCharCount() {
             const textarea = document.getElementById('editMensagem');
             const charCount = document.getElementById('editCharCount');
@@ -1346,7 +1599,6 @@
             }
         }
 
-        // Função para configurar os modais de edição
         function setupEditModals() {
             const editModal = document.getElementById('editMessageModal');
             const confirmEditModal = document.getElementById('confirmEditModal');
@@ -1356,7 +1608,6 @@
             const confirmEditBtn = document.getElementById('confirmEdit');
             const editMensagemTextarea = document.getElementById('editMensagem');
 
-            // Contador de caracteres
             if (editMensagemTextarea) {
                 editMensagemTextarea.addEventListener('input', updateCharCount);
                 editMensagemTextarea.addEventListener('keydown', function (e) {
@@ -1366,7 +1617,6 @@
                 });
             }
 
-            // Cancelar edição
             if (cancelEditBtn) {
                 cancelEditBtn.addEventListener('click', function () {
                     editModal.style.display = 'none';
@@ -1375,14 +1625,12 @@
                 });
             }
 
-            // Cancelar confirmação
             if (cancelConfirmEditBtn) {
                 cancelConfirmEditBtn.addEventListener('click', function () {
                     confirmEditModal.style.display = 'none';
                 });
             }
 
-            // Submit do formulário de edição
             if (editForm) {
                 editForm.addEventListener('submit', function (e) {
                     e.preventDefault();
@@ -1391,7 +1639,6 @@
                     const destinatario = document.getElementById('editDestinatario').value.trim();
                     const mensagem = document.getElementById('editMensagem').value.trim();
 
-                    // Validações
                     if (!remetente || !destinatario || !mensagem) {
                         alert('Por favor, preencha todos os campos.');
                         return;
@@ -1402,7 +1649,6 @@
                         return;
                     }
 
-                    // Preparar texto de confirmação
                     const confirmText = `
                 <div style="margin-bottom: 15px;">
                     <strong>Confirme as alterações:</strong>
@@ -1423,7 +1669,6 @@
                     document.getElementById('confirmEditText').innerHTML = confirmText;
                     confirmEditModal.style.display = 'flex';
 
-                    // Configurar o botão de confirmação
                     confirmEditBtn.onclick = async function () {
                         this.disabled = true;
                         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
@@ -1431,16 +1676,13 @@
                         const success = await editMessage(currentEditMessageId, remetente, destinatario, mensagem);
 
                         if (success) {
-                            // Fechar modais
                             confirmEditModal.style.display = 'none';
                             editModal.style.display = 'none';
                             editForm.reset();
 
-                            // Recarregar mensagens
                             await displayStats();
                             await displayMessagesOrdered();
 
-                            // Mostrar mensagem de sucesso
                             showSuccessNotification('Mensagem editada com sucesso!');
                         }
 
@@ -1451,7 +1693,6 @@
                 });
             }
 
-            // Fechar modais ao clicar fora
             [editModal, confirmEditModal].forEach(modal => {
                 if (modal) {
                     modal.addEventListener('click', function (e) {
@@ -1467,7 +1708,6 @@
             });
         }
 
-        // Função para mostrar notificação de sucesso
         function showSuccessNotification(message) {
             const notification = document.getElementById('newMessageNotification');
             const title = notification.querySelector('.new-message-title');
@@ -1475,20 +1715,16 @@
 
             title.textContent = '✓ Alterações salvas!';
             sender.textContent = message;
-
-            // Mudar cor para sucesso
             notification.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
 
             notification.classList.add('show');
 
             setTimeout(() => {
                 notification.classList.remove('show');
-                notification.style.background = ''; // Resetar cor
+                notification.style.background = '';
             }, 3000);
         }
 
-
-        // ========== CONFIGURAR MODAL DE EXCLUSÃO INDIVIDUAL ==========
         function setupIndividualDeleteModal() {
             const modal = document.getElementById('confirmDeleteModal');
             const cancelBtn = document.getElementById('cancelDelete');
@@ -1521,7 +1757,6 @@
                 });
             }
 
-            // Fechar modal ao clicar fora
             if (modal) {
                 modal.addEventListener('click', function (e) {
                     if (e.target === this) {
@@ -1531,73 +1766,6 @@
                 });
             }
         }
-
-        // ========== INICIALIZAÇÃO ATUALIZADA ==========
-        document.addEventListener('DOMContentLoaded', async function () {
-            // Carregar dados
-            await displayStats();
-            await displayMessagesOrdered();
-            await loadLastMessageId();
-            await setupEditModals();
-
-            // Iniciar sistema de atualização
-            startPolling();
-
-            // Configurar botão de excluir todas
-            document.getElementById('deleteAllMessages').addEventListener('click', async function () {
-                const messages = await getAllMessagesOrdered();
-                const totalMessages = messages.length;
-
-                if (totalMessages === 0) {
-                    alert('Não há mensagens para excluir.');
-                    return;
-                }
-
-                document.getElementById('confirmDeleteAllText').textContent =
-                    `Tem certeza que deseja excluir todas as ${totalMessages} mensagens? Esta ação não pode ser desfeita.`;
-                document.getElementById('confirmDeleteAllModal').style.display = 'flex';
-            });
-
-            // Configurar modal de exclusão em lote
-            document.getElementById('cancelDeleteAll').addEventListener('click', function () {
-                document.getElementById('confirmDeleteAllModal').style.display = 'none';
-            });
-
-            document.getElementById('confirmDeleteAll').addEventListener('click', async function () {
-                const success = await deleteAllMessages();
-                if (success) {
-                    await displayStats();
-                    await displayMessagesOrdered();
-                }
-                document.getElementById('confirmDeleteAllModal').style.display = 'none';
-            });
-
-            // Configurar modal de exclusão individual
-            setupIndividualDeleteModal();
-
-            // Fechar modais ao clicar fora
-            document.getElementById('confirmDeleteAllModal').addEventListener('click', function (e) {
-                if (e.target === this) {
-                    this.style.display = 'none';
-                }
-            });
-
-            // Adicionar evento para parar polling quando a página não estiver visível
-            document.addEventListener('visibilitychange', function () {
-                if (document.hidden) {
-                    console.log('⏸️ Página em segundo plano, pausando atualizações');
-                    stopPolling();
-                } else {
-                    console.log('▶️ Página em primeiro plano, retomando atualizações');
-                    startPolling();
-                }
-            });
-
-            // Solicitar permissão para notificações
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
-        });
     </script>
 </body>
 
