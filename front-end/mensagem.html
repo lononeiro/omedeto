@@ -63,7 +63,7 @@
 
                 <div class="form-group">
                     <label id="labelMessage" for="mensagem" class="required"></label>
-                    <textarea id="mensagem" maxlength="400" required></textarea>
+                    <textarea id="mensagem" maxlength="250" required></textarea>
 
                     <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#6c757d;">
                         <span id="tipText"></span>
@@ -127,7 +127,7 @@
                 messagePlaceholder: "Escreva sua mensagem de reconhecimento...",
                 senderLimit: "Máx. 50 caracteres",
                 receiverLimit: "Máx. 50 caracteres",
-                charLabel: "0 / 400",
+                charLabel: "0 / 250",
                 tipText: "Dica: Seja específico sobre as contribuições do colega.",
                 btnSend: "Enviar Reconhecimento",
                 btnReset: "Limpar Formulário",
@@ -152,7 +152,7 @@
                 messagePlaceholder: "感謝や評価のメッセージを入力してください",
                 senderLimit: "最大50文字",
                 receiverLimit: "最大50文字",
-                charLabel: "0 / 400",
+                charLabel: "0 / 250",
                 tipText: "ヒント：同僚の具体的な貢献内容を書きましょう。",
                 btnSend: "送信",
                 btnReset: "入力内容をクリア",
@@ -184,7 +184,7 @@
         };
 
         mensagem.oninput = () => {
-            charLabel.innerText = `${mensagem.value.length} / 400`;
+            charLabel.innerText = `${mensagem.value.length} / 250`;
         };
 
         messageForm.onsubmit = async e => {
@@ -205,7 +205,7 @@
         closeModal.onclick = newMessageBtn.onclick = () => {
             confirmationModal.style.display = "none";
             messageForm.reset();
-            charLabel.innerText = "0 / 400";
+            charLabel.innerText = "0 / 250";
         };
 
         applyLanguage();
