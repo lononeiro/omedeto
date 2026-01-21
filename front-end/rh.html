@@ -436,8 +436,8 @@
             }
 
             const fontPath = isBold
-                ? '/fonts/NotoSansJP-Bold.otf'
-                : '/fonts/NotoSansJP-Regular.otf';
+                ? './fonts/NotoSansJP-Bold.otf'
+                : './fonts/NotoSansJP-Regular.otf';
 
             const response = await fetch(fontPath);
 
@@ -786,13 +786,18 @@
                 // Calcular posições
                 const centerX = width / 2;
 
+                //destinatario com a fonte azul
+                const destinatarioSize = 18;
+                // Adicionar destinatário - agora using automatic JP scaling + centering helper
+                await drawCenteredText(firstPage, cleanedDestinatario, height - 200, destinatarioSize, fontRegular, PDFLib.rgb(0, 0, 0));
+
                 // Adicionar remetente - agora using automatic JP scaling + centering helper
                 const remetenteSize = 18;
                 await drawCenteredText(firstPage, cleanedRemetente, 150, remetenteSize, fontRegular, PDFLib.rgb(0, 0, 0));
 
                 // Adicionar mensagem formatada
                 const messageLines = formatMessageLines(cleanedMensagem, 50, 10);
-                let yPos = height - 200;
+                let yPos = height - 250;
 
                 console.log(`Mensagem dividida em ${messageLines.length} linhas`);
 
