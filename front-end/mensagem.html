@@ -108,7 +108,7 @@
     </div>
 
     <script>
-        const API_URL = "https://omedeto.onrender.com/api";
+        const   API_URL = "https://omedeto.onrender.com/api";
 
         let currentLang = "pt";
 
@@ -165,6 +165,24 @@
             }
         };
 
+
+        function disableSubmit(disabled = true) {
+    const submitBtn = document.querySelector('#messageForm button[type="submit"]');
+
+    if (!submitBtn) return;
+
+    submitBtn.disabled = disabled;
+
+    if (disabled) {
+        submitBtn.dataset.originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Enviando...`;
+    } else {
+        submitBtn.innerHTML = submitBtn.dataset.originalText;
+    }
+}
+
+
+
         function applyLanguage() {
             const t = texts[currentLang];
             Object.keys(t).forEach(id => {
@@ -189,6 +207,7 @@
 
         messageForm.onsubmit = async e => {
             e.preventDefault();
+             disableSubmit(true);
             const res = await fetch(`${API_URL}/messages/public`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -200,6 +219,7 @@
             });
             const data = await res.json();
             if (data.success) confirmationModal.style.display = "flex";
+             disableSubmit(false);
         };
 
         closeModal.onclick = newMessageBtn.onclick = () => {
